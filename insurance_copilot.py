@@ -169,7 +169,7 @@ def register_insurance_copilot(app, llm):
         # STEP 5: RETURN RESPONSE
         # ==================================================
         return render_template(
-            "Insurance_copilot.html",
+            "insurance_copilot.html",
             answer=answer,
             top_queries=top_queries
         )
