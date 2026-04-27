@@ -1535,7 +1535,7 @@ def create_ticket():
     keywords = " ".join(incident.lower().split())
 
     # ===== INSERT INTO SQLITE =====
-    conn = sqlite3.connect(r"D:\pythonPractice\IntelliIQ.db")
+    conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
 
     cursor.execute("select name from sqlite_master where type='table';")
