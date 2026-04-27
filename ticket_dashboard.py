@@ -1,7 +1,7 @@
 # ==========================================================
 # TICKET DASHBOARD MODULE (CLEAN + FINAL)
 # ==========================================================
-
+import os
 import sqlite3
 from datetime import datetime
 import requests
@@ -15,7 +15,7 @@ from flask import render_template, request, jsonify   # ✅ IMPORTANT
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_NAME = os.path.join(BASE_DIR, "IntelliIQ.db")
 
-import os
+
 from dotenv import load_dotenv
 
 load_dotenv()
