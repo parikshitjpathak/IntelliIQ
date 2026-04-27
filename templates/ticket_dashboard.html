@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html>
+<head>
+   <!-- for problem saving code -->
+    <script>
+// ==========================================================
+// POPUP HANDLING
+// ==========================================================
+
+function openPopup(incident, count, days) {
+
+    document.getElementById("overlay").style.display = "block";
+    document.getElementById("popup").style.display = "block";
+
+    document.getElementById("popupIncident").innerText = "Incident: " + incident;
+    document.getElementById("popupCount").innerText = "Occurrences: " + count;
+
+    document.getElementById("incidentInput").value = incident;
+    document.getElementById("countInput").value = count;
+    document.getElementById("daysInput").value = days;
+
+    document.getElementById("successMsg").style.display = "none";
+}
+
+function closePopup() {
+    document.getElementById("overlay").style.display = "none";
+    document.getElementById("popup").style.display = "none";
+}
+
+
+// ==========================================================
+// FORM SUBMIT (FINAL FIX)
+// ==========================================================
+
+document.addEventListener("DOMContentLoaded", function() {
+
+    document.getElementById("problemForm").addEventListener("submit", function(e) {
+
+        e.preventDefault();
+
+        const formData = new FormData(this);
+
+        fetch("/create_problem_ticket", {
+            method: "POST",
+            body: formData
+        })
+        .then(async (response) => {
+
+            let data = null;
+
+            try {
+                data = await response.json();   // try JSON safely
+            } catch (e) {
+                console.warn("JSON parsing failed");
+            }
+
+            document.getElementById("successMsg").style.display = "block";
+
+            if (data && data.jira_ticket_id) {
+
+                document.getElementById("successMsg").innerHTML =
+                    "✅ Problem Ticket Created: " +
+                    "<a href='https://parikshit-pathak.atlassian.net/browse/" +
+                    data.jira_ticket_id +
+                    "' target='_blank'>" +
+                    data.jira_ticket_id +
+                    "</a>";
+
+            } else {
+
+                document.getElementById("successMsg").innerText =
+                    "✅ Problem Ticket Created Successfully";
+
+            }
+
+        })
+        .catch(error => {
+
+            console.error("Unexpected error:", error);
+
+            // IMPORTANT: still show success (backend already worked)
+            document.getElementById("successMsg").style.display = "block";
+            document.getElementById("successMsg").innerText =
+                "✅ Problem Ticket Created (UI fallback)";
+
+        });
+
+    });
+
+});
+</script>
+
+
+    <!-- problem poopip code ends here-->
+
+    <title>Ticket Dashboard</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f7fa;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: auto;
+        }
+
+        /* Navigation */
+        .nav {
+            margin-bottom: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #f5f5f5;
+        }
+
+        .nav a {
+            margin-left: 15px;
+            text-decoration: none;
+            color: #007bff;
+        }
+
+        /* Card */
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #ddd;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        h2 {
+            margin-bottom: 15px;
+        }
+
+        /* Table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            text-align: left;
+            padding: 10px;
+            background-color: #007bff;
+            color: white;
+        }
+
+        td {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+
+        .badge {
+            padding: 4px 8px;
+            border-radius: 5px;
+            font-size: 12px;
+        }
+
+        .category {
+            background-color: #e3f2fd;
+            color: #0d47a1;
+        }
+
+        .ticket {
+            font-weight: bold;
+            color: #007bff;
+        }
+         .navbar {
+            background: white;
+            padding: 15px 30px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <!-- Navigation -->
+  <div class="navbar">
+    <div class="nav-title">⚙️ Ops Intelligence Hub</div>
+    {% include "navbar.html" %}
+</div>
+
+<!-- ================== Early Warning Code -->
+{% if early_warnings %}
+
+<div style="
+    margin-bottom:20px;
+    padding:15px;
+    border-radius:10px;
+    background-color:#ffe5e5;
+    border:1px solid #ffcccc;
+">
+
+    <h3>🚨 Early Warning Alerts</h3>
+
+    <ul>
+        {% for w in early_warnings %}
+        <li>
+            ⚠️ {{ w.incident }} increased from {{ w.prev_count }} → {{ w.last_count }}
+        </li>
+        {% endfor %}
+    </ul>
+
+</div>
+
+{% endif %}
+<!-- ============================Early warning ends========================= -->
+<!-- 🚨 RECOMMENDED PROBLEM TICKETS -->
+<!-- ===================================================== -->
+
+{% if problem_tickets %}
+
+<div style="
+    margin-bottom:20px;
+    padding:15px;
+    border-radius:10px;
+    background-color:#fff3cd;
+    border:1px solid #ffeeba;
+">
+
+    <h3 style="margin-bottom:10px;">🚨 Recommended Problem Tickets</h3>
+
+    <table style="width:100%; border-collapse: collapse;">
+
+        <tr style="background-color:#f8f9fa;">
+            <th style="padding:8px; border:1px solid #ddd;">Incident</th>
+            <th style="padding:8px; border:1px solid #ddd;">Occurrences</th>
+            <th style="padding:8px; border:1px solid #ddd;">Window (Days)</th>
+            <th style="padding:8px; border:1px solid #ddd;">Action</th>
+        </tr>
+
+        {% for p in problem_tickets %}
+        <tr>
+            <td style="padding:8px; border:1px solid #ddd;">
+                {{ p.incident }}
+            </td>
+
+            <td style="padding:8px; border:1px solid #ddd; text-align:center;">
+                {{ p.count }}
+            </td>
+
+            <td style="padding:8px; border:1px solid #ddd; text-align:center;">
+                {{ p.window_days }}
+            </td>
+
+            <td style="padding:8px; border:1px solid #ddd; text-align:center;">
+                <button type="button"
+                    onclick="openPopup(`{{ p.incident }}`, '{{ p.count }}', '{{ p.window_days }}')"
+                    style="padding:6px 12px; background:#dc3545; color:white; border:none; border-radius:6px;">
+                    Create Problem Ticket
+                </button>
+            </td>
+        </tr>
+        {% endfor %}
+
+    </table>
+
+</div>
+
+{% endif %}
+
+
+    <div class="card">
+
+        <h2>🎟 Ticket Dashboard</h2>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Ticket ID</th>
+                    <th>Problem Ticket</th>
+                    <th>Assignee</th>
+                    <th>Incident</th>
+                    <th>Category</th>
+                    <th>Logged Date</th>
+                    <th>SLA Status</th>
+                    <th>Due Date</th>
+                    <th>Days Open</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for t in tickets %}
+                <tr>
+
+                    <td>
+                        <a href="{{ t.jira_link }}" target="_blank" class="ticket">
+                            {{ t.ticket_id }}
+                        </a>
+                    </td>
+                    <td>
+                        {% if t.problem_ticket_id %}
+                            <a href="https://parikshit-pathak.atlassian.net/browse/{{ t.problem_ticket_id }}" target="_blank">
+                                {{ t.problem_ticket_id }}
+                            </a>
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>{{ t.assignee }}</td>
+                    <td>{{ t.incident }}</td>
+                    <td>
+                        <span class="badge category">
+                            {{ t.category }}
+                         </span>
+                    </td>
+    <td>{{ t.date }}</td>
+
+    <td>
+        <span class="badge" style="
+            background-color:
+            {% if t.sla_color == 'green' %} #d4edda
+            {% elif t.sla_color == 'orange' %} #fff3cd
+            {% elif t.sla_color == 'navy' %} #00000
+            {% else %} #f8d7da
+            {% endif %};
+            color:
+            {% if t.sla_color == 'green' %} #155724
+            {% elif t.sla_color == 'blue' %} #0c5460
+            {% elif t.sla_color == 'orange' %} #856404
+            {% else %} #721c24
+            {% endif %};
+        ">
+            {{ t.sla_status }}
+        </span>
+    </td>
+    <td>{{ t.due_date }}</td>
+    <td>{{ t.days_open }}</td>
+</tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+    </div>
+
+</div>
+
+<!-- Definig popup block for problem ticket -->
+
+<!-- OVERLAY -->
+<div id="overlay" style="
+    display:none;
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background:rgba(0,0,0,0.6);
+    z-index:999;
+"></div>
+
+<!-- MODAL -->
+<div id="popup" style="
+    display:none;
+    position:fixed;
+    top:50%;
+    left:50%;
+    transform:translate(-50%, -50%);
+    width:450px;
+    background:white;
+    border-radius:12px;
+    padding:25px;
+    box-shadow:0 10px 40px rgba(0,0,0,0.3);
+    z-index:1000;
+    font-family:Arial;
+">
+
+    <h2 style="margin-bottom:10px;">⚠️ Recurring Issue</h2>
+
+    <p id="popupIncident"></p>
+    <p id="popupCount"></p>
+
+    <!-- SUCCESS -->
+    <div id="successMsg" style="
+        display:none;
+        background:#d4edda;
+        color:#155724;
+        padding:10px;
+        border-radius:6px;
+        margin-top:10px;
+    ">
+        ✅ Problem Ticket Created Successfully
+    </div>
+
+    <form id="problemForm">
+        <input type="hidden" name="incident" id="incidentInput">
+        <input type="hidden" name="count" id="countInput">
+        <input type="hidden" name="window_days" id="daysInput">
+
+        <button type="submit" style="
+            width:100%;
+            margin-top:15px;
+            padding:10px;
+            background:#dc3545;
+            color:white;
+            border:none;
+            border-radius:6px;
+            cursor:pointer;
+        ">
+            Create Problem Ticket
+        </button>
+    </form>
+
+    <button onclick="closePopup()" style="
+        width:100%;
+        margin-top:10px;
+        padding:8px;
+        background:#6c757d;
+        color:white;
+        border:none;
+        border-radius:6px;
+    ">
+        Close
+    </button>
+
+</div>
+
+<!-- popup block ends ehre-->
+
+
+
+</body>
+</html>

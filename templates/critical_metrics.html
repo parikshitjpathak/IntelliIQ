@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Critical Metrics</title>
+    <style>
+        body {
+            font-family: Arial;
+            background: #f4f6f8;
+            padding: 20px;
+        }
+
+        h2 {
+            margin-bottom: 20px;
+        }
+
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            width: 220px;
+            box-shadow: 0px 3px 8px rgba(0,0,0,0.08);
+            position: relative;
+        }
+
+        .title {
+            font-size: 14px;
+            color: gray;
+        }
+
+        .value {
+            font-size: 28px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .trend {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 18px;
+        }
+
+        .green { color: green; }
+        .red { color: red; }
+        .orange { color: orange; }
+
+        .footer {
+            margin-top: 30px;
+            font-size: 12px;
+            color: gray;
+        }
+
+         .navbar {
+            background: white;
+            padding: 15px 30px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+    </style>
+</head>
+
+<body>
+<div class="navbar">
+    <div class="nav-title">⚙️ Ops Intelligence Hub</div>
+    {% include "navbar.html" %}
+</div>
+<h2>📊 Critical Metrics (Last 7 Days)</h2>
+
+<div class="container">
+
+    <div class="card">
+        <div class="trend">{{ total_trend }}</div>
+        <div class="title">Total Incidents</div>
+        <div class="value">{{ total_incidents }}</div>
+    </div>
+
+    <div class="card">
+        <div class="trend">{{ p1_trend }}</div>
+        <div class="title">P1 Incidents</div>
+        <div class="value">{{ p1_count }}</div>
+    </div>
+
+    <div class="card">
+        <div class="trend">{{ p2_trend }}</div>
+        <div class="title">P2 Incidents</div>
+        <div class="value">{{ p2_count }}</div>
+    </div>
+
+    <div class="card">
+        <div class="trend">{{ revenue_trend }}</div>
+        <div class="title">Revenue Impact</div>
+        <div class="value">{{ revenue_count }}</div>
+    </div>
+
+    <div class="card">
+        <div class="title">SLA Breach %</div>
+        <div class="value {{ sla_color }}">{{ sla_breach_pct }}%</div>
+    </div>
+
+    <div class="card">
+        <div class="title">Avg Days Open</div>
+        <div class="value {{ mttr_color }}">{{ avg_days_open }}</div>
+    </div>
+
+    <div class="card">
+        <div class="title">⏱ Hours Saved</div>
+        <div class="value green">{{ hours_saved }}</div>
+    </div>
+
+    <div class="card">
+        <div class="title">📉 MTTR Improvement</div>
+        <div class="value green">{{ mttr_improvement }}%</div>
+    </div>
+
+</div>
+<h3 style="margin-top:30px;">🔥 All Issues in last 7 days</h3>
+
+<div class="card" style="width: 400px;">
+    {% for issue, count in top_issues %}
+        <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+            <span>{{ issue }}</span>
+            <strong>{{ count }}</strong>
+        </div>
+    {% endfor %}
+</div>
+
+<h3 style="margin-top:30px;">🚨 Problem Areas</h3>
+<small style="color: gray;">
+Problem areas are issues occurring 3 or more times in the last 7 days<br><br>
+</small>
+
+<div class="card" style="width: 400px; border-left: 5px solid red;">
+
+    {% if problem_candidates %}
+
+        {% for issue, count in problem_candidates %}
+            <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                <span>{{ issue.replace('_',' ').title() }}</span>
+                <strong>{{ count }}</strong>
+            </div>
+        {% endfor %}
+
+    {% else %}
+
+        <div style="color: gray;">
+            No recurring issues detected
+        </div>
+
+    {% endif %}
+
+</div>
+{% if problem_candidates and problem_candidates|length > 0 %}
+
+    <hr style="margin:10px 0;">
+
+    <div style="color:#b30000; font-weight:600;">
+        👉 Recommended Action:
+    </div>
+
+    <div style="margin-top:5px;">
+        Create Problem Ticket for the above areas to prevent recurring incidents
+    </div>
+
+{% endif %}
+<div class="footer">
+    ↑ Increase | ↓ Decrease | → No Change (vs previous 7 days)
+</div>
+
+</body>
+</html>

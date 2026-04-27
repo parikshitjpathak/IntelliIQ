@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>AI Powered Incidents Analysis Engine</title>
+
+    <style>
+        .container { width: 60%; margin: 40px auto; }
+        .card { background: white; padding: 20px 25px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+        h2 { margin-top: 0;
+            color: #2c3e50; }
+        label { font-weight: bold; display: block; margin-top: 15px; }
+        textarea { width: 100%; height: 100px; padding: 10px; margin-top: 5px; border-radius: 5px; border: 1px solid #ccc; }
+        select { width: 100%; padding: 8px; margin-top: 5px; border-radius: 5px; border: 1px solid #ccc; }
+        .btn { margin-top: 20px; padding: 12px 20px; background-color: #0078D4; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; }
+        .btn:hover { background-color: #005fa3; }
+        .section-title { margin-top: 20px; font-size: 18px; color: #34495e; }
+
+        body {
+            font-family: Arial;
+            background-color: #f5f7fa;
+        }
+
+        .container {
+            width: 95%;
+            margin: auto;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .card {
+            background: white;
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        textarea {
+            width: 100%;
+        }
+
+        .section {
+            margin-top: 20px;
+        }
+        .chart-container {
+            width: 750px;
+            height: 550px;
+            margin: auto;
+        }
+         .navbar {
+            background: white;
+            padding: 15px 30px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+
+
+  <div class="navbar">
+    <div class="nav-title">⚙️ Ops Intelligence Hub</div>
+    {% include "navbar.html" %}
+</div>
+
+</div>
+<p>Describe the issue. Let AI + history guide you.</p>
+
+
+    <h2>📝 Incident Details</h2>
+    <form action="/analyze" method="POST">
+        <label>Incident Description:</label> <textarea name="incident" required></textarea>
+        <label>Product:</label> <select name="product"> <option value="Guidewire">Guidewire</option> <option value="OneShield" selected>OneShield</option> </select>
+        <div class="section-title">📊 Incident Classification</div>
+        <label>Environment:</label> <select name="environment"> <option value="Prod" selected>Production</option> <option value="Non-Prod">Non-Production</option> </select>
+        <label>Users Impacted:</label>
+        <select name="users_impacted">
+            <option value="<10" selected>&lt;10</option>
+            <option value="10-30">10–30</option>
+            <option value="30-100">30–100</option>
+            <option value=">100">&gt;100</option>
+        </select>
+        <label>Region / Locale:</label>
+        <select name="region_impacted">
+        <option value="Global" selected>Global</option>
+        <option value="APAC">APAC</option>
+        <option value="EMEA">EMEA</option>
+        <option value="US">US</option>
+        <option value="India">India</option>
+        </select>
+        <label>Revenue Impact:</label>
+        <select name="revenue_impact">
+            <option value="No" selected>No</option>
+            <option value="Yes">Yes</option>
+        </select>
+        <label>Workaround Available:</label>
+        <select name="workaround">
+            <option value="No" selected>No</option>
+            <option value="Yes">Yes</option>
+            <option value="Partial">Partial</option>
+        </select>
+        <button class="btn" type="submit">🔍 Analyze</button>
+    </form>
+
+    {% if show_result %}
+    <p style="margin-top:20px; font-weight:bold; color:#2c3e50;">
+        📊 Below is the analysis and recommendation
+    </p>
+{% endif %}
+
+{% if data %}
+
+<!-- 🔥 GRID START -->
+<div class="grid">
+
+    <!-- AI Analysis -->
+    <div class="card">
+        {% if priority %}
+    <div style="margin-top:15px; padding:12px; border-radius:6px;
+        {% if priority == 'P1' %}background:#ffebee; color:#c62828;
+        {% elif priority == 'P2' %}background:#fff3e0; color:#ef6c00;
+        {% elif priority == 'P3' %}background:#fffde7; color:#f9a825;
+        {% else %}background:#e8f5e9; color:#2e7d32;
+        {% endif %}
+    ">
+        {% if priority_reasons %}
+    <div style="margin-top:10px; padding:10px; background:#f4f6f8; border-left:4px solid #3498db;">
+        <b>Why this priority {{ priority }} incident?</b>
+        <ul style="margin-top:5px;">
+            {% for reason in priority_reasons %}
+                <li>{{ reason }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+{% endif %}
+        <b>
+        {% if priority == 'P1' %}🔴{% elif priority == 'P2' %}🟠{% elif priority == 'P3' %}🟡{% else %}🟢{% endif %}
+        PRIORITY: {{ priority }}
+        </b>
+    </div>
+{% endif %}
+
+        {% if sla_text %}
+    <p style="margin-top:15px; font-weight:bold; color:#2c3e50;">
+        ⏳ SLA Due: {{ sla_text }} ({{ due_date }})
+    </p>
+{% endif %}
+        <h3>🧠 AI Analysis</h3>
+        <p><b>Summary:</b> {{ data.summary }}</p>
+        <p><b>For Product:</b> {{ product }}</p>
+        <p><b>Impact:</b> {{ data.impact }}</p>
+        <p><b>Root Cause:</b> {{ data.root_cause }}</p>
+        <p><b>Recommendations:</b> {{ data.recommendations }}</p>
+
+
+        <p><b>Severity:</b> {{ data.severity }}</p>
+        <p><b>SLA Due:</b> {{ due_date }}</p>
+    </div>
+    <!-- Recommended actions -->
+    <div class="card section">
+        <h3>Recommended Actions</h3>
+        <p><b>{{decision}}</b></p>
+
+    </div>
+
+    <!-- Pattern Insight -->
+    <div class="card">
+        <h3>📊 Pattern Insight</h3>
+        <p><b>Occurrence:</b> {{ frequency }}</p>
+        <p><b>Top Root Cause:</b> {{ top_root_cause }}</p>
+        <p><b>Pattern:</b> {{ pattern_flag }}</p>
+    </div>
+
+</div>
+
+<!-- Trend -->
+<div class="card section">
+    <h3>📈 Incident Trend</h3>
+    <p><b>{{ trend_message }}</b></p>
+
+   {% if frequency is defined and frequency > 0 %}
+    <ul>
+        <li>Last 1 day: {{ count_1d }}</li>
+        <li>Last 3 days: {{ count_3d }}</li>
+        <li>Last 5 days: {{ count_5d }}</li>
+        <li>Last 7 days: {{ count_7d }}</li>
+        <li>Older: {{ count_older }}</li>
+    </ul>
+
+    {% else %}
+    <p>No similar incidents found</p>
+    {% endif %}
+    <div class="chart-container">
+    <canvas id="trendChart"></canvas>
+</div>
+</div>
+    <div class="card section">
+    <h3>📊 Incident Category Distribution</h3>
+
+    {% if category_counts %}
+        <ul>
+        {% for category, count in category_counts.items() %}
+            <li>{{ category }}: {{ count }}</li>
+        {% endfor %}
+        </ul>
+    {% else %}
+        <p>No categorized incidents available</p>
+    {% endif %}
+</div>
+
+
+<!-- 🔥 Suggestions (ALWAYS visible) -->
+<div class="card section">
+    <h3>🛠️ Suggested Troubleshooting Steps</h3>
+
+    <ul>
+        {% for step in suggestions %}
+            <li>{{ step }}</li>
+        {% endfor %}
+    </ul>
+</div>
+
+<!-- 🔥 Similar Incidents (ONLY if exists) -->
+{% if kb_solution %}
+<div class="card section">
+    <h3>📚 Similar Past Incidents</h3>
+
+    <p><b>Solution:</b> {{ kb_solution }}</p>
+    <p><b>Root Cause:</b> {{ top_root_cause }}</p>
+    <p><b>Match Score:</b> {{ match_score }}</p>
+
+    {% if ticket_list %}
+    <ul>
+        {% for ticket in ticket_list %}
+        <li>
+            <a href="https://parikshit-pathak.atlassian.net/browse/{{ticket}}" target="_blank">
+                {{ ticket }}
+            </a>
+        </li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+{% endif %}
+
+<form method="POST" action="/create_ticket">
+    <input type="hidden" name="summary" value="{{ data.summary }}">
+    <input type="hidden" name="impact" value="{{ data.impact }}">
+    <input type="hidden" name="root_cause" value="{{ data.root_cause }}">
+    <input type="hidden" name="recommendations" value="{{ data.recommendations }}">
+
+    <input type="hidden" name="existing_ticket" value="{{existing_ticket}}">
+    <input type="hidden" name="incident" value="{{incident}}">
+    <input type="hidden" name="priority" value="{{ priority }}">
+    <input type="hidden" name="due_date" value="{{ due_date_iso }}">
+    <input type="hidden" name="environment" value="{{ request.form.environment }}">
+    <input type="hidden" name="users_impacted" value="{{ request.form.users_impacted }}">
+    <input type="hidden" name="region_impacted" value="{{ request.form.region_impacted }}">
+    <input type="hidden" name="revenue_impact" value="{{ request.form.revenue_impact }}">
+    <input type="hidden" name="workaround" value="{{ request.form.workaround }}">
+
+
+<br><br>
+
+    <label>🎯 Create Jira Ticket?</label><br>
+    <input type="radio" name="create" value="yes" checked> Yes
+    <input type="radio" name="create" value="no"> No
+
+    <br><br>
+    <button type="submit">Submit</button>
+</form>
+
+{% endif %}
+
+{% if ticket_link %}
+<hr>
+<h3>🎉 Ticket Created</h3>
+<a href="{{ ticket_link }}" target="_blank">{{ ticket_link }}</a>
+{% endif %}
+
+{% if ticket_link and not confluence_link %}
+<hr>
+
+<h3>📘 Knowledge Base</h3>
+
+<form method="POST" action="/create_confluence">
+    <input type="hidden" name="summary" value="{{ summary }}">
+    <input type="hidden" name="impact" value="{{ impact }}">
+    <input type="hidden" name="root_cause" value="{{ root_cause }}">
+    <input type="hidden" name="recommendations" value="{{ recommendations }}">
+    <input type="hidden" name="ticket_link" value="{{ ticket_link }}">
+    <input type="hidden" name="incident" value="{{summary}}">
+
+    <label>Create Confluence Page?</label><br>
+    <input type="radio" name="create_conf" value="yes" checked> Yes
+    <input type="radio" name="create_conf" value="no"> No
+
+    <br><br>
+    <button type="submit">Submit</button>
+</form>
+{% endif %}
+
+{% if confluence_link %}
+<hr>
+<h3>📘 Confluence Page Created</h3>
+<a href="{{ confluence_link }}" target="_blank">{{ confluence_link }}</a>
+{% endif %}
+{% if frequency is defined and frequency > 0 %}
+<script>
+    const ctx = document.getElementById('trendChart');
+
+    if (ctx) {
+        const dataValues = [
+            {{ count_older | default(0) }},
+            {{ count_7d | default(0) }},
+            {{ count_5d | default(0) }},
+            {{ count_3d | default(0) }},
+            {{ count_1d | default(0) }}
+        ];
+
+        const hasData = dataValues.some(v => v > 0);
+
+        if (hasData) {
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Older', '7 Days', '5 Days', '3 Days', '1 Day'],
+                    datasets: [{
+                        label: 'Incident Trend (Old → Recent)',
+                        data: dataValues,
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Number of Incidents'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Time Progression'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    }
+</script>
+
+    <script>
+    const pieCtx = document.getElementById('globalPieChart');
+
+    if (pieCtx) {
+        const data = {
+            labels: [
+                {% for key in global_category_counts.keys() %}
+                    "{{ key }}",
+                {% endfor %}
+            ],
+            datasets: [{
+                data: [
+                    {% for value in global_category_counts.values() %}
+                        {{ value }},
+                    {% endfor %}
+                ]
+            }]
+        };
+
+        const hasData = data.datasets[0].data.some(v => v > 0);
+
+        if (hasData) {
+            new Chart(pieCtx, {
+                type: 'pie',
+                data: data,
+                options: {
+                    responsive: true
+                }
+            });
+        }
+    }
+</script>
+{% endif %}
+</body>
+</html>

@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2>📝 RCA Generator</h2>
+
+{% if success_message %}
+    <p style="color:green;">{{ success_message }}</p>
+{% endif %}
+
+{% if page_link %}
+    <p><a href="{{ page_link }}" target="_blank">🔗 Open Confluence Page</a></p>
+{% endif %}
+
+<div class="layout">
+
+    <!-- LEFT: FORM -->
+    <div class="card form-section">
+
+        <form method="POST">
+
+            <label>Ticket ID</label>
+            <select name="ticket_id" id="ticketDropdown" onchange="populateIncident()" required>
+                <option value="">Select Ticket</option>
+                {% for t in tickets %}
+                    <option value="{{ t[2] }}" data-incident="{{ t[0] }}">
+                        {{ t[2] }}
+                    </option>
+                {% endfor %}
+            </select>
+
+            <label>Incident</label>
+            <input type="text" name="incident" id="incidentField" readonly required>
+
+            <label>Impact</label>
+            <textarea name="impact" rows="2"></textarea>
+
+            <label>Notes</label>
+            <textarea name="notes" rows="2"></textarea>
+
+            <label>Resolution Notes</label>
+            <textarea name="resolution_notes" rows="3"></textarea>
+
+            <label>Status</label>
+            <select name="status">
+                <option>Open</option>
+                <option>Resolved</option>
+                <option>Pending Release</option>
+            </select>
+
+            <label>Team</label>
+            <input type="text" name="team">
+
+            <label>Fix Date</label>
+            <input type="date" name="fix_date">
+
+            <button type="submit" class="btn-primary">Generate RCA</button>
+
+        </form>
+
+    </div>
+
+    <!-- RIGHT: RCA OUTPUT -->
+    <div class="card rca-section">
+
+        {% if rca_output %}
+
+            <h3>📄 Root Cause Analysis</h3>
+
+            <div class="section-divider"></div>
+
+            <p><strong>Issue:</strong> {{ rca_output.issue }}</p>
+            <p><strong>Impact:</strong> {{ rca_output.impact }}</p>
+
+            <div class="section-divider"></div>
+
+            <p><strong>Root Cause:</strong> {{ rca_output.root_cause }}</p>
+            <p><strong>Resolution:</strong> {{ rca_output.resolution }}</p>
+
+            <p><strong>Preventive Actions:</strong></p>
+            <ul>
+                {% for action in rca_output.preventive_actions.split('.') %}
+                    {% if action.strip() %}
+                        <li>{{ action.strip() }}</li>
+                    {% endif %}
+                {% endfor %}
+            </ul>
+
+            <div class="section-divider"></div>
+
+            <p><strong>Status:</strong> {{ rca_output.status }}</p>
+            <p><strong>Team:</strong> {{ rca_output.team }}</p>
+            <p><strong>Fix Date:</strong> {{ rca_output.fix_date }}</p>
+
+            <form method="POST" action="/push_rca_confluence">
+                <input type="hidden" name="ticket_id" value="{{ rca_output.ticket_id }}">
+                <input type="hidden" name="incident" value="{{ rca_output.issue }}">
+                <input type="hidden" name="rca_output" value='{{ rca_output | tojson }}'>
+
+                <button type="submit" class="btn-secondary">🚀 Push to Confluence</button>
+            </form>
+
+        {% endif %}
+
+    </div>
+
+</div>
+
+<style>
+.layout {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+}
+
+.form-section {
+    flex: 1;
+}
+
+.rca-section {
+    flex: 1;
+}
+
+label {
+    font-weight: 600;
+    margin-top: 12px;
+    display: block;
+}
+
+input, select, textarea {
+    width: 100%;
+    padding: 10px;
+    margin-top: 5px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    font-family: inherit;
+}
+
+textarea {
+    resize: vertical;
+}
+
+.btn-primary {
+    margin-top: 15px;
+    padding: 10px 16px;
+    border: none;
+    border-radius: 8px;
+    background: #2563eb;
+    color: white;
+    cursor: pointer;
+}
+
+.btn-secondary {
+    margin-top: 10px;
+    padding: 10px 16px;
+    border: none;
+    border-radius: 8px;
+    background: #16a34a;
+    color: white;
+    cursor: pointer;
+}
+
+.section-divider {
+    height: 1px;
+    background: #e2e8f0;
+    margin: 15px 0;
+}
+</style>
+
+<script>
+function populateIncident() {
+    var dropdown = document.getElementById("ticketDropdown");
+    var selectedOption = dropdown.options[dropdown.selectedIndex];
+    var incident = selectedOption.getAttribute("data-incident");
+
+    document.getElementById("incidentField").value = incident || "";
+}
+</script>
+
+{% endblock %}

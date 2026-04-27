@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Problem Dashboard</title>
+
+    <style>
+        body {
+            font-family: Arial;
+            background-color: #f5f7fa;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: auto;
+        }
+
+        .header {
+            background: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .header h2 {
+            margin: 0;
+        }
+
+        .card {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: #f1f3f5;
+            padding: 10px;
+            text-align: left;
+        }
+
+        td {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        tr:hover {
+            background-color: #fafafa;
+        }
+
+        .badge {
+            padding: 5px 10px;
+            border-radius: 20px;
+            background: #ffeeba;
+            font-size: 12px;
+        }
+
+        .nav {
+            margin-bottom: 15px;
+        }
+
+        .nav a {
+            margin-right: 15px;
+            text-decoration: none;
+            color: #007bff;
+        }
+         .navbar {
+            background: white;
+            padding: 15px 30px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+
+
+    <!-- NAV -->
+   <div class="navbar">
+    <div class="nav-title">⚙️ Ops Intelligence Hub</div>
+    {% include "navbar.html" %}
+   </div>
+
+
+    <!-- HEADER -->
+    <div class="header">
+        <h2>🧠 Problem Tickets Dashboard</h2>
+        <p style="color:gray; margin-top:5px;">
+            Recurring issues identified for proactive resolution
+        </p>
+    </div>
+
+    <!-- TABLE -->
+    <div class="card">
+
+        <table>
+
+            <tr>
+                <th>ID</th>
+                <th>Jira Ticket</th>
+                <th>Incident</th>
+                <th>Occurrences</th>
+                <th>Window</th>
+                <th>Created</th>
+            </tr>
+
+            {% for p in problems %}
+            <tr>
+                <td>{{ p.id }}
+                </td>
+                <td>
+                    {% if p.jira_ticket_id %}
+                        <a href="https://parikshit-pathak.atlassian.net/browse/{{ p.jira_ticket_id }}" target="_blank">
+                            {{ p.jira_ticket_id }}
+                        </a>
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+
+                <td>
+                    <b>{{ p.incident }}</b>
+                </td>
+
+                <td>
+                    <span class="badge">
+                        {{ p.count }} times
+                    </span>
+                </td>
+
+                <td>{{ p.window }} days</td>
+
+                <td>{{ p.created }}</td>
+            </tr>
+            {% endfor %}
+
+        </table>
+
+    </div>
+
+</div>
+
+</body>
+</html>
