@@ -73,7 +73,7 @@ def calculate_trends(matches, frequency):
 # - Detect recurring incidents
 # - Identify candidates for problem tickets
 # ==========================================================
-
+import os
 import sqlite3
 from datetime import datetime, timedelta
 
