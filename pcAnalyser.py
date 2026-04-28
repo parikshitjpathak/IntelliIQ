@@ -793,6 +793,15 @@ def control_tower():
 #============== route ends here ===============================
 
 # ==========================================================
+# GLOBAL TEMPLATE VARIABLES (AVAILABLE IN ALL HTML FILES)
+# ==========================================================
+@app.context_processor
+def inject_global_vars():
+    return dict(
+        app_owner="Parikshit"
+    )
+
+# ==========================================================
 # STEP 12: HOME ROUTE
 # ==========================================================
 
