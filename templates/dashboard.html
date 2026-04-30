@@ -1,174 +1,159 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>IntelliIQ Dashboard</title>
+{% extends "base.html" %}
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% block title %}Dashboard{% endblock %}
 
-    <style>
-        body {
-            font-family: Arial;
-            background-color: #f5f7fa;
-        }
+{% block content %}
 
-        .container {
-            width: 90%;
-            margin: auto;
-        }
+<h2>📊 IntelliIQ Dashboard</h2>
 
-        .card {
-            background: white;
-            border: 1px solid #ddd;
-            padding: 20px;
-            border-radius: 10px;
-            margin-top: 20px;
-            text-align: center;
-        }
+<!-- ================= TOP INSIGHT ================= -->
+<div class="card">
 
-        .chart-container {
-            width: 350px;
-            height: 250px;
-            margin: auto;
-        }
-         .navbar {
-            background: white;
-            padding: 15px 30px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-    </style>
-</head>
+    <h3>🌍 System-wide Incident Distribution</h3>
 
-<body>
+    {% if top_category %}
+    <p>
+        <strong>Top Problem Area:</strong>
+        {{ top_category }} ({{ top_percentage }}%)
+    </p>
+    {% endif %}
 
-<div class="container">
+    <p>
+        <strong>💡 Recommendation:</strong><br>
+        {{ recommendation }}
+    </p>
 
-
- <div class="navbar">
-    <div class="nav-title">⚙️ Ops Intelligence Hub- by Parikshit</div>
-    {% include "navbar.html" %}
-</div>
-
-
-    <div class="card">
-        <h3>System-wide Incident Distribution</h3>
-
-        <p>
-            <b>Top Problem Area:</b>
-            {{ top_category }} ({{ top_percentage }}% of incidents)
-        </p>
-        <p>
-            <b>💡 Recommendation:</b><br>
-            {{ recommendation }}
-        </p>
-
-        <div class="chart-container">
-            <canvas id="globalPieChart"></canvas>
-        </div>
+    <div style="max-width:400px; margin:auto;">
+        <canvas id="globalPieChart"></canvas>
     </div>
 
 </div>
 
-<script>
-    const pieCtx = document.getElementById('globalPieChart');
+<!-- ================= INCIDENT EXPLORER ================= -->
+<div class="card">
 
-    if (pieCtx) {
-        const data = {
-            labels: [
-                {% for key in global_category_counts.keys() %}
-                    "{{ key }}",
-                {% endfor %}
-            ],
-            datasets: [{
-                data: [
-                    {% for value in global_category_counts.values() %}
-                        {{ value }},
-                    {% endfor %}
-                ]
-            }]
-        };
+    <h3>🔎 Incident Explorer</h3>
 
-        const hasData = data.datasets[0].data.some(v => v > 0);
+    <div style="display:flex; gap:10px; margin-bottom:15px;">
 
-        if (hasData) {
-            new Chart(pieCtx, {
-                type: 'pie',
-                data: data,
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false
-                }
-            });
-        }
-    }
-</script>
-<p><h3 style="margin-top:30px;">Incident Explorer</h3></p>
-<div style="margin-bottom: 10px;">
-  <input
-    type="text"
-    id="searchInput"
-    placeholder="Search incidents..."
-    style="padding:5px; width: 40%;"
-  >
+        <input
+            type="text"
+            id="searchInput"
+            placeholder="Search incidents..."
+            style="
+            flex:3;
+            padding:10px;
+            border-radius:6px;
+            border:1px solid #ccc;
+            font-size:14px;
+        "
+        >
 
-  <select id="categoryFilter" style="padding:5px;">
-    <option value="All">All Categories</option>
-    <option value="Front End">Frontend</option>
-    <option value="Database">Database</option>
-    <option value="API">API</option>
-    <option value="Batch">Batch</option>
-    <option value="Infra">Infrastructure</option>
-    <option value="Monitoring">Monitoring</option>
-  </select>
+        <select id="categoryFilter"
+        style="
+            flex:1;
+            padding:10px;
+            border-radius:6px;
+            border:1px solid #ccc;
+        "
+        >
+            <option value="All">All Categories</option>
+            <option value="Frontend">Frontend</option>
+            <option value="Database">Database</option>
+            <option value="API">API</option>
+            <option value="Batch">Batch</option>
+            <option value="Infrastructure">Infrastructure</option>
+            <option value="Monitoring">Monitoring</option>
+        </select>
+
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Incident</th>
+                <th>Category</th>
+                <th>Jira Ticket</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+
+        <tbody id="incidentTable">
+            {% for row in incidents %}
+            <tr>
+                <td>{{ row[0] }}</td>
+                <td>{{ row[1] }}</td>
+                <td>
+                    <a href="https://parikshit-pathak.atlassian.net/browse/{{ row[2] }}" target="_blank">
+                        {{ row[2] }}
+                    </a>
+                </td>
+                <td>{{ row[3] }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
 </div>
-<table id="incidentTable" border="1" cellpadding="8" cellspacing="0" style="width:100%; margin-top:10px; border-collapse: collapse;">
-  <tr style="background-color:#f2f2f2;">
-    <th>Incident</th>
-    <th>Category</th>
-    <th>Jira Ticket</th>
-    <th>Date</th>
-  </tr>
 
-  {% for row in incidents %}
-  <tr>
-    <td>{{ row[0] }}</td>
-    <td>{{ row[1] }}</td>
-    <td>
-     <a href="https://parikshit-pathak.atlassian.net/browse/{{ row[2] }}" target="_blank">
-    {{ row[2] }}
-</a>
-    </td>
-    <td>{{ row[3] }}</td>
-  </tr>
-  {% endfor %}
-</table>
+<!-- ================= CHART ================= -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+const pieCtx = document.getElementById('globalPieChart');
+
+if (pieCtx) {
+    const data = {
+        labels: [
+            {% for key in global_category_counts.keys() %}
+                "{{ key }}",
+            {% endfor %}
+        ],
+        datasets: [{
+            data: [
+                {% for value in global_category_counts.values() %}
+                    {{ value }},
+                {% endfor %}
+            ]
+        }]
+    };
+
+    const hasData = data.datasets[0].data.some(v => v > 0);
+
+    if (hasData) {
+        new Chart(pieCtx, {
+            type: 'pie',
+            data: data,
+            options: {
+                responsive: true
+            }
+        });
+    }
+}
+</script>
+
+<!-- ================= FILTER SCRIPT ================= -->
 <script>
 function filterTable() {
-  let searchValue = document.getElementById("searchInput").value.toLowerCase();
-  let categoryValue = document.getElementById("categoryFilter").value;
+    let searchValue = document.getElementById("searchInput").value.toLowerCase();
+    let categoryValue = document.getElementById("categoryFilter").value;
 
-  let table = document.getElementById("incidentTable");
-  let rows = table.getElementsByTagName("tr");
+    let rows = document.getElementById("incidentTable").getElementsByTagName("tr");
 
-  for (let i = 1; i < rows.length; i++) {
-    let incident = rows[i].getElementsByTagName("td")[0].innerText.toLowerCase();
-    let category = rows[i].getElementsByTagName("td")[1].innerText;
+    for (let i = 0; i < rows.length; i++) {
 
-    let matchesSearch = incident.includes(searchValue);
-    let matchesCategory = (categoryValue === "All" || category === categoryValue);
+        let incident = rows[i].getElementsByTagName("td")[0].innerText.toLowerCase();
+        let category = rows[i].getElementsByTagName("td")[1].innerText;
 
-    if (matchesSearch && matchesCategory) {
-      rows[i].style.display = "";
-    } else {
-      rows[i].style.display = "none";
+        let matchesSearch = incident.includes(searchValue);
+        let matchesCategory = (categoryValue === "All" || category === categoryValue);
+
+        rows[i].style.display = (matchesSearch && matchesCategory) ? "" : "none";
     }
-  }
 }
 
 document.getElementById("searchInput").addEventListener("keyup", filterTable);
 document.getElementById("categoryFilter").addEventListener("change", filterTable);
 </script>
-</body>
-</html>
+
+{% endblock %}

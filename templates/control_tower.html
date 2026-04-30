@@ -1,355 +1,169 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Control Tower</title>
+{% extends "base.html" %}
 
-    <!-- Google Font -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+{% block title %}Control Tower{% endblock %}
 
-    <style>
-        /* =====================================================
-           GLOBAL STYLES
-        ===================================================== */
-        body {
-            font-family: 'Inter', sans-serif;
-            background: #f8fafc;
-            margin: 0;
-            color: #1e293b;
-        }
+{% block content %}
 
-        .container {
-            max-width: 1300px;
-            margin: auto;
-            padding: 20px;
-        }
+<h2>📊 Operations Control Tower</h2>
+<p class="subtle">Last Synced: {{ last_synced }}</p>
 
-        h2 {
-            margin-bottom: 5px;
-        }
+<!-- KPI STRIP -->
+<div class="row">
+    <div class="card">
+        <div class="subtle">Total Tickets</div>
+        <div class="kpi">
+            {{ status_counts.get('Open',0) + status_counts.get('In Progress',0) + status_counts.get('Closed',0) }}
+        </div>
+    </div>
 
-        h3 {
-            font-size: 16px;
-            color: #475569;
-            margin-bottom: 12px;
-        }
+    <div class="card">
+        <div class="subtle">SLA Health</div>
+        <div class="kpi">{{ sla_health.percentage }}%</div>
+    </div>
 
-        .subtle {
-            font-size: 13px;
-            color: #64748b;
-        }
+    <div class="card">
+        <div class="subtle">Breached</div>
+        <div class="kpi">{{ sla_health.breached }}</div>
+    </div>
 
-        /* =====================================================
-           NAVBAR (TEMP — will move to base.html later)
-        ===================================================== */
-        .navbar {
-            background: white;
-            padding: 15px 30px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .nav-title {
-            font-weight: 700;
-            font-size: 18px;
-        }
-
-        /* =====================================================
-           LAYOUT SYSTEM
-        ===================================================== */
-        .row {
-            display: flex;
-            gap: 20px;
-            margin-bottom: 25px;
-            flex-wrap: wrap;
-        }
-
-        .column {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        /* =====================================================
-           CARD SYSTEM
-        ===================================================== */
-        .card {
-            background: white;
-            padding: 18px;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-            flex: 1;
-            transition: all 0.2s ease;
-        }
-
-        .card:hover {
-            transform: translateY(-4px);
-        }
-
-        .small-card {
-            padding: 12px;
-            text-align: center;
-            min-width: 120px;
-            border: 1px solid #e2e8f0;
-            border-radius: 10px;
-        }
-
-        /* =====================================================
-           KPI STYLES (NEW — important upgrade)
-        ===================================================== */
-        .kpi {
-            font-size: 28px;
-            font-weight: 700;
-        }
-
-        .metric {
-            font-size: 20px;
-            font-weight: 600;
-        }
-
-        /* =====================================================
-           BADGES
-        ===================================================== */
-        .badge {
-            display: inline-block;
-            padding: 4px 10px;
-            border-radius: 8px;
-            font-size: 12px;
-            font-weight: 600;
-        }
-
-        .badge-green {
-            background: #dcfce7;
-            color: #166534;
-        }
-
-        .badge-yellow {
-            background: #fef9c3;
-            color: #854d0e;
-        }
-
-        .badge-red {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-
-        /* =====================================================
-           RISK CARDS
-        ===================================================== */
-        .risk-red {
-            border-left: 5px solid #ef4444;
-            background: #fef2f2;
-        }
-
-        .risk-amber {
-            border-left: 5px solid #f59e0b;
-            background: #fffbeb;
-        }
-
-    </style>
-</head>
-
-<body>
-
-<!-- =====================================================
-     NAVBAR
-===================================================== -->
-<div class="navbar">
-    <div class="nav-title">⚙️ Ops Intelligence Hub - by {{ app_owner }}</div>
-    {% include "navbar.html" %}
+    <div class="card">
+        <div class="subtle">Weekly Trend</div>
+        <div class="kpi">{{ weekly_trend }}</div>
+    </div>
 </div>
 
-<div class="container">
+<!-- STATUS + PRIORITY -->
+<div class="row">
 
-    <!-- HEADER -->
-    <h2>📊 Operations Control Tower</h2>
-    <p class="subtle">Last Synced: {{ last_synced }}</p>
-
-    <!-- =====================================================
-         KPI STRIP (NEW — EXECUTIVE VIEW)
-    ===================================================== -->
-    <div class="row">
-        <div class="card">
-            <div class="subtle">Total Tickets</div>
-            <div class="kpi">
-                {{ status_counts.get('Open',0) + status_counts.get('In Progress',0) + status_counts.get('Closed',0) }}
-            </div>
-        </div>
-
-        <div class="card">
-            <div class="subtle">SLA Health</div>
-            <div class="kpi">{{ sla_health.percentage }}%</div>
-        </div>
-
-        <div class="card">
-            <div class="subtle">Breached</div>
-            <div class="kpi">{{ sla_health.breached }}</div>
-        </div>
-
-        <div class="card">
-            <div class="subtle">Weekly Trend</div>
-            <div class="kpi">{{ weekly_trend }}</div>
-        </div>
-    </div>
-
-    <!-- =====================================================
-         STATUS + PRIORITY
-    ===================================================== -->
-    <div class="row">
-
-        <div class="card">
-            <h3>📌 Status Distribution</h3>
-            <div class="row">
-                <div class="small-card"><div>Open</div><div class="metric">{{ status_counts.get('Open', 0) }}</div></div>
-                <div class="small-card"><div>In Progress</div><div class="metric">{{ status_counts.get('In Progress', 0) }}</div></div>
-                <div class="small-card"><div>Closed</div><div class="metric">{{ status_counts.get('Closed', 0) }}</div></div>
-            </div>
-        </div>
-
-        <div class="card">
-            <h3>⚡ Priority Distribution</h3>
-            <div class="row">
-                <div class="small-card"><div>P1</div><div class="metric">{{ priority_counts.get('P1', 0) }}</div></div>
-                <div class="small-card"><div>P2</div><div class="metric">{{ priority_counts.get('P2', 0) }}</div></div>
-                <div class="small-card"><div>P3</div><div class="metric">{{ priority_counts.get('P3', 0) }}</div></div>
-                <div class="small-card"><div>P4</div><div class="metric">{{ priority_counts.get('P4', 0) }}</div></div>
-            </div>
-        </div>
-
-    </div>
-
-    <!-- =====================================================
-         SLA SECTION
-    ===================================================== -->
-    <div class="row">
-
-        <div class="card">
-            <h3>⏱ SLA Snapshot</h3>
-            <div class="row">
-                <div class="small-card">On Track<br><span class="metric">{{ sla_counts.get('On Track', 0) }}</span></div>
-                <div class="small-card">At Risk<br><span class="metric">{{ sla_counts.get('At Risk', 0) }}</span></div>
-                <div class="small-card">Breached<br><span class="metric">{{ sla_counts.get('Breached', 0) }}</span></div>
-            </div>
-        </div>
-
-        <div class="card">
-            <h3>📈 SLA Health</h3>
-            <div class="kpi">{{ sla_health.percentage }}%</div>
-            <p class="subtle">Breached: {{ sla_health.breached }}</p>
-
-            {% if sla_health.status.startswith("Good") %}
-                <span class="badge badge-green">{{ sla_health.status }}</span>
-            {% elif sla_health.status.startswith("Warning") %}
-                <span class="badge badge-yellow">{{ sla_health.status }}</span>
-            {% else %}
-                <span class="badge badge-red">{{ sla_health.status }}</span>
-            {% endif %}
-        </div>
-
-    </div>
-
-    <!-- =====================================================
-         WEEKLY PERFORMANCE (CLEANED — NO NESTED CARDS)
-    ===================================================== -->
     <div class="card">
-        <h3>📊 Weekly Performance</h3>
-
+        <h3>📌 Status Distribution</h3>
         <div class="row">
-
-            <div class="small-card">
-                <strong>Current Week</strong>
-                <p class="subtle">{{ weekly_metrics.current.label }}</p>
-                <p>Created: {{ weekly_metrics.current.created }}</p>
-                <p>Closed: {{ weekly_metrics.current.closed }}</p>
-                <p>Missed SLA: {{ weekly_metrics.current.missed }}</p>
-                <p>SLA: {{ weekly_metrics.current.sla }}%</p>
-            </div>
-
-            <div class="small-card">
-                <strong>Previous Week</strong>
-                <p class="subtle">{{ weekly_metrics.previous.label }}</p>
-                <p>Created: {{ weekly_metrics.previous.created }}</p>
-                <p>Closed: {{ weekly_metrics.previous.closed }}</p>
-                <p>Missed SLA: {{ weekly_metrics.previous.missed }}</p>
-                <p>SLA: {{ weekly_metrics.previous.sla }}%</p>
-            </div>
-
+            <div class="small-card"><div>Open</div><div class="metric">{{ status_counts.get('Open', 0) }}</div></div>
+            <div class="small-card"><div>In Progress</div><div class="metric">{{ status_counts.get('In Progress', 0) }}</div></div>
+            <div class="small-card"><div>Closed</div><div class="metric">{{ status_counts.get('Closed', 0) }}</div></div>
         </div>
-
-        <p class="subtle"><strong>{{ weekly_trend }}</strong></p>
     </div>
 
-    <!-- =====================================================
-         TOP ANALYSTS
-    ===================================================== -->
     <div class="card">
-        <h3>🏆 Top Analysts</h3>
+        <h3>⚡ Priority Distribution</h3>
         <div class="row">
-            {% for analyst in top_analysts %}
-                <div class="small-card">
-                    <strong>
-                        {% if loop.index == 1 %}
-                            🥇 {{ analyst.name }}
-                        {% else %}
-                            {{ analyst.name }}
-                        {% endif %}
-                    </strong>
-                    <div class="subtle">Resolved: {{ analyst.count }}</div>
-                </div>
-            {% endfor %}
+            <div class="small-card"><div>P1</div><div class="metric">{{ priority_counts.get('P1', 0) }}</div></div>
+            <div class="small-card"><div>P2</div><div class="metric">{{ priority_counts.get('P2', 0) }}</div></div>
+            <div class="small-card"><div>P3</div><div class="metric">{{ priority_counts.get('P3', 0) }}</div></div>
+            <div class="small-card"><div>P4</div><div class="metric">{{ priority_counts.get('P4', 0) }}</div></div>
         </div>
     </div>
 
-    <!-- =====================================================
-         RISKS + AGING
-    ===================================================== -->
+</div>
+
+<!-- SLA -->
+<div class="row">
+
+    <div class="card">
+        <h3>⏱ SLA Snapshot</h3>
+        <div class="row">
+            <div class="small-card">On Track<br><span class="metric">{{ sla_counts.get('On Track', 0) }}</span></div>
+            <div class="small-card">At Risk<br><span class="metric">{{ sla_counts.get('At Risk', 0) }}</span></div>
+            <div class="small-card">Breached<br><span class="metric">{{ sla_counts.get('Breached', 0) }}</span></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>📈 SLA Health</h3>
+        <div class="kpi">{{ sla_health.percentage }}%</div>
+        <p class="subtle">Breached: {{ sla_health.breached }}</p>
+
+        {% if sla_health.status.startswith("Good") %}
+            <span class="badge badge-green">{{ sla_health.status }}</span>
+        {% elif sla_health.status.startswith("Warning") %}
+            <span class="badge badge-yellow">{{ sla_health.status }}</span>
+        {% else %}
+            <span class="badge badge-red">{{ sla_health.status }}</span>
+        {% endif %}
+    </div>
+
+</div>
+
+<!-- WEEKLY -->
+<div class="card">
+    <h3>📊 Weekly Performance</h3>
+
     <div class="row">
+        <div class="small-card">
+            <strong>Current Week</strong>
+            <p class="subtle">{{ weekly_metrics.current.label }}</p>
+            <p>Created: {{ weekly_metrics.current.created }}</p>
+            <p>Closed: {{ weekly_metrics.current.closed }}</p>
+            <p>Missed SLA: {{ weekly_metrics.current.missed }}</p>
+            <p>SLA: {{ weekly_metrics.current.sla }}%</p>
+        </div>
 
-        <!-- RISKS -->
-        <div class="card">
-            <h3>🚨 Top Risks</h3>
+        <div class="small-card">
+            <strong>Previous Week</strong>
+            <p class="subtle">{{ weekly_metrics.previous.label }}</p>
+            <p>Created: {{ weekly_metrics.previous.created }}</p>
+            <p>Closed: {{ weekly_metrics.previous.closed }}</p>
+            <p>Missed SLA: {{ weekly_metrics.previous.missed }}</p>
+            <p>SLA: {{ weekly_metrics.previous.sla }}%</p>
+        </div>
+    </div>
 
-            <div class="column">
-            {% for risk in top_risks %}
-                {% if risk[5] == "BREACHED" %}
-                    <div class="card risk-red">
-                {% else %}
-                    <div class="card risk-amber">
-                {% endif %}
+    <p class="subtle"><strong>{{ weekly_trend }}</strong></p>
+</div>
 
-                    <strong>{{ risk[0] }}</strong>
-                    <p class="subtle">{{ risk[3] }} times in last 7 days</p>
-                    <p class="subtle">Priority: {{ risk[1] }}</p>
-                    <p class="subtle">Due: {{ risk[2] }}</p>
-
-                    {% if risk[4] %}
-                        <p class="subtle">Tickets: {{ risk[4] | join(', ') }}</p>
+<!-- ANALYSTS -->
+<div class="card">
+    <h3>🏆 Top Analysts</h3>
+    <div class="row">
+        {% for analyst in top_analysts %}
+            <div class="small-card">
+                <strong>
+                    {% if loop.index == 1 %}
+                        🥇 {{ analyst.name }}
+                    {% else %}
+                        {{ analyst.name }}
                     {% endif %}
-
-                </div>
-            {% endfor %}
+                </strong>
+                <div class="subtle">Resolved: {{ analyst.count }}</div>
             </div>
-        </div>
+        {% endfor %}
+    </div>
+</div>
 
-        <!-- AGING -->
-        <div class="card">
-            <h3>⏳ Aging Tickets</h3>
+<!-- RISKS + AGING -->
+<div class="row">
 
-            <div class="column">
-            {% for ticket in aging_tickets %}
+    <div class="card">
+        <h3>🚨 Top Risks</h3>
+        <div class="column">
+        {% for risk in top_risks %}
+            {% if risk[5] == "BREACHED" %}
+                <div class="card risk-red">
+            {% else %}
                 <div class="card risk-amber">
-                    <strong>{{ ticket[0] }}</strong>
-                    <p class="subtle">Priority: {{ ticket[1] }}</p>
-                    <p class="subtle">Age: {{ ticket[2] }} days</p>
-                </div>
-            {% endfor %}
+            {% endif %}
+                <strong>{{ risk[0] }}</strong>
+                <p class="subtle">{{ risk[3] }} times</p>
+                <p class="subtle">Priority: {{ risk[1] }}</p>
+                <p class="subtle">Due: {{ risk[2] }}</p>
             </div>
+        {% endfor %}
         </div>
+    </div>
 
+    <div class="card">
+        <h3>⏳ Aging Tickets</h3>
+        <div class="column">
+        {% for ticket in aging_tickets %}
+            <div class="card risk-amber">
+                <strong>{{ ticket[0] }}</strong>
+                <p class="subtle">Priority: {{ ticket[1] }}</p>
+                <p class="subtle">Age: {{ ticket[2] }} days</p>
+            </div>
+        {% endfor %}
+        </div>
     </div>
 
 </div>
 
-</body>
-</html>
+{% endblock %}

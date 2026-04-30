@@ -1,132 +1,92 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Insurance Copilot</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-</head>
-<body>
-<div style="
-    margin-bottom: 20px;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    background-color: #f5f5f5;
-">
+{% extends "base.html" %}
 
+{% block title %}AI Copilot{% endblock %}
 
+{% block content %}
 
-  <div class="navbar">
-    <div class="nav-title">⚙️ Ops Intelligence Hub- by Parikshit</div>
-    {% include "navbar.html" %}
-</div>
+<h2>🤖 IntelliIQ Copilot</h2>
+<p class="subtle">Ask anything about incidents, SLA, or platform knowledge</p>
 
+<!-- ================= CHAT CONTAINER ================= -->
+<div class="card" style="min-height: 400px; display:flex; flex-direction:column; justify-content:space-between;">
 
+    <!-- CHAT HISTORY -->
+    <div id="chatWindow" style="flex:1; overflow-y:auto; margin-bottom:15px;">
 
+        {% if query %}
+        <div class="chat user">
+            {{ query }}
+        </div>
+        {% endif %}
 
-</div>
+        {% if answer %}
+        <div class="chat bot">
+            {{ answer | safe }}
+        </div>
+        {% endif %}
 
-<h2>🛡 Insurance Copilot (AI Support Assistant)</h2>
-
-<form method="POST" action="/insurance_copilot">
-   <textarea name="query" rows="5" cols="80"
-          placeholder="Ask something like:
-- How to configure alerts for ORA-600?
-- How does underwriting impact claims in Guidewire?
-- How to automate certificate expiry monitoring?"
-          required></textarea>
-    <br><br>
-    <button type="submit">Ask Your Insurance Copilot</button>
-</form>
-
-{% if answer %}
-    <hr>
-    <h3>Response:</h3>
-   <div style="white-space: pre-wrap; font-family: Arial; line-height: 1.6;">
-    {{ answer }}
-</div>
-{% endif %}
-
-{% if top_queries %}
-<hr>
-<h3>🔥 Top Searched Queries</h3>
-<ul>
-    {% for q in top_queries %}
-        <li>{{ q[0] }} ({{ q[1] }})</li>
-    {% endfor %}
-</ul>
-{% endif %}
-
-<h3>📊 Top Query Trends</h3>
-<div style="
-    width: 90%;
-    max-width: 700px;
-    height: 390px;
-    margin: 20px auto;
-    padding: 15px;
-    border: ;
-    border-radius: 10px;
-    background-color: #ffff;
-    box-sizing: border-box;
-">
-    <h3 style="text-align:center;">📊 Top Query Trends</h3>
-    <div style="position: relative; height: 290px;">
-        <canvas id="trendChart"></canvas>
     </div>
+
+    <!-- INPUT -->
+    <form method="POST" action="/insurance_copilot" style="display:flex; gap:10px;">
+        <input type="text" name="query" placeholder="Ask something..." required style="flex:1;">
+        <button type="submit" class="btn-primary">Ask</button>
+    </form>
+
 </div>
+
+<!-- ================= TOP QUERIES ================= -->
+{% if top_queries %}
+<div class="card">
+    <h3>🔥 Top Queries</h3>
+    <ul>
+        {% for q in top_queries %}
+            <li>{{ q[0] }} ({{ q[1] }})</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+<!-- ================= CHART ================= -->
+<div class="card">
+    <h3>📊 Query Trends</h3>
+    <canvas id="trendChart" height="120"></canvas>
+</div>
+
+<!-- ================= CHART SCRIPT ================= -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <script>
-    const labels = [
-        {% for q in top_queries %}
-            "{{ q[0] }}",
-        {% endfor %}
-    ];
+const labels = [
+    {% for q in top_queries %}
+        "{{ q[0] }}",
+    {% endfor %}
+];
 
-    const data = [
-        {% for q in top_queries %}
-            {{ q[1] }},
-        {% endfor %}
-    ];
+const data = [
+    {% for q in top_queries %}
+        {{ q[1] }},
+    {% endfor %}
+];
 
-    const ctx = document.getElementById('trendChart').getContext('2d');
+const ctx = document.getElementById('trendChart').getContext('2d');
 
-    new Chart(ctx, {
+new Chart(ctx, {
     type: 'bar',
     data: {
         labels: labels,
         datasets: [{
             label: 'Search Frequency',
-            data: data,
-            backgroundColor: 'rgba(54, 162, 235, 0.6)'
+            data: data
         }]
     },
     options: {
         responsive: true,
-        maintainAspectRatio: false,
         scales: {
-            x: {
-                ticks: {
-                    display:false
-                },
-                grid:{
-                    display:false
-                }
-            }
-
-
-        },
-        plugins: {
-            tooltip: {
-                callbacks: {
-                    label: function(context) {
-                        return context.label + " : " + context.raw;
-                    }
-                }
-            }
+            x: { display: false }
         }
     }
 });
 </script>
-<br>
 
-
-</body>
-</html>
+{% endblock %}

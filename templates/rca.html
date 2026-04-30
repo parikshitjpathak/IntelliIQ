@@ -1,21 +1,28 @@
 {% extends "base.html" %}
 
+{% block title %}RCA Generator{% endblock %}
+
 {% block content %}
 
 <h2>📝 RCA Generator</h2>
 
 {% if success_message %}
-    <p style="color:green;">{{ success_message }}</p>
+    <div class="card alert-success">
+        {{ success_message }}
+    </div>
 {% endif %}
 
 {% if page_link %}
     <p><a href="{{ page_link }}" target="_blank">🔗 Open Confluence Page</a></p>
 {% endif %}
 
-<div class="layout">
+<!-- MAIN LAYOUT -->
+<div class="row">
 
     <!-- LEFT: FORM -->
-    <div class="card form-section">
+    <div class="card" style="flex:1">
+
+        <h3>🧾 RCA Input</h3>
 
         <form method="POST">
 
@@ -60,19 +67,17 @@
 
     </div>
 
-    <!-- RIGHT: RCA OUTPUT -->
-    <div class="card rca-section">
+    <!-- RIGHT: OUTPUT -->
+    <div class="card" style="flex:1">
 
         {% if rca_output %}
 
             <h3>📄 Root Cause Analysis</h3>
 
-            <div class="section-divider"></div>
-
             <p><strong>Issue:</strong> {{ rca_output.issue }}</p>
             <p><strong>Impact:</strong> {{ rca_output.impact }}</p>
 
-            <div class="section-divider"></div>
+            <hr>
 
             <p><strong>Root Cause:</strong> {{ rca_output.root_cause }}</p>
             <p><strong>Resolution:</strong> {{ rca_output.resolution }}</p>
@@ -86,7 +91,7 @@
                 {% endfor %}
             </ul>
 
-            <div class="section-divider"></div>
+            <hr>
 
             <p><strong>Status:</strong> {{ rca_output.status }}</p>
             <p><strong>Team:</strong> {{ rca_output.team }}</p>
@@ -97,7 +102,9 @@
                 <input type="hidden" name="incident" value="{{ rca_output.issue }}">
                 <input type="hidden" name="rca_output" value='{{ rca_output | tojson }}'>
 
-                <button type="submit" class="btn-secondary">🚀 Push to Confluence</button>
+                <button type="submit" class="btn-secondary">
+                    🚀 Push to Confluence
+                </button>
             </form>
 
         {% endif %}
@@ -106,67 +113,7 @@
 
 </div>
 
-<style>
-.layout {
-    display: flex;
-    gap: 20px;
-    align-items: flex-start;
-}
-
-.form-section {
-    flex: 1;
-}
-
-.rca-section {
-    flex: 1;
-}
-
-label {
-    font-weight: 600;
-    margin-top: 12px;
-    display: block;
-}
-
-input, select, textarea {
-    width: 100%;
-    padding: 10px;
-    margin-top: 5px;
-    border-radius: 8px;
-    border: 1px solid #e2e8f0;
-    font-family: inherit;
-}
-
-textarea {
-    resize: vertical;
-}
-
-.btn-primary {
-    margin-top: 15px;
-    padding: 10px 16px;
-    border: none;
-    border-radius: 8px;
-    background: #2563eb;
-    color: white;
-    cursor: pointer;
-}
-
-.btn-secondary {
-    margin-top: 10px;
-    padding: 10px 16px;
-    border: none;
-    border-radius: 8px;
-    background: #16a34a;
-    color: white;
-    cursor: pointer;
-}
-
-.section-divider {
-    height: 1px;
-    background: #e2e8f0;
-    margin: 15px 0;
-}
-</style>
-
+<!-- SCRIPT -->
 <script>
 function populateIncident() {
     var dropdown = document.getElementById("ticketDropdown");
