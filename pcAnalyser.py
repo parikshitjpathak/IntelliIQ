@@ -16,6 +16,9 @@ import sqlite3
 from ticket_dashboard import register_ticket_dashboard
 from insurance_copilot import register_insurance_copilot
 from critical_metrics import register_critical_metrics
+from system_advisor import register_system_advisor
+from operations_insights import register_operations_insights
+
 from normalization_engine import normalize_incident
 
 #DB_PATH = r"D:\pythonPractice\IntelliIQ.db"
@@ -693,6 +696,7 @@ print("db path: ",os.path.abspath("IntelliIQ.db"))
 # Purpose: Load API keys and configuration
 # ==========================================================
 
+#load_dotenv("mykeys.env")
 load_dotenv()
 
 project_key = os.getenv("JIRA_PROJECT_KEY")
@@ -752,6 +756,8 @@ register_insurance_copilot(app, llm)
 
 register_ticket_dashboard(app)
 register_critical_metrics(app)
+register_system_advisor(app)
+register_operations_insights(app)
 
 
 #====== Add all apps registered between these blocks
@@ -809,6 +815,8 @@ def inject_global_vars():
 def home():
     incident_prefill = request.args.get("incident", "")
     return render_template("PC_IncidentAnalyser.html")
+
+
 
 
 from trend_engine import get_recurring_issues
@@ -1044,7 +1052,8 @@ def dashboard():
         top_category=top_category,
         top_percentage=top_percentage,
         recommendation = recommendation,
-        incidents=incidents
+        incidents=incidents,
+        active_page="dashboard"
 
 
     )
@@ -1324,6 +1333,7 @@ def analyze():
         top_percentage=top_percentage,
         #rca_output=rca_output,
         show_result= True,
+        active_page="home"
 
 
 
@@ -1368,7 +1378,8 @@ def rca_page():
     return render_template(
         "rca.html",
         rca_output=None,
-        tickets=tickets
+        tickets=tickets,
+        active_page="rca"
     )
 
 #rca generator code ends here===========================
@@ -1734,6 +1745,11 @@ def create_confluence():
         # ticket_list=ticket_list
 
     )
+
+
+
+
+
 
 
 # ==========================================================
