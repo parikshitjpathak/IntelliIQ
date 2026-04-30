@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}System Stability Advisor{% endblock %}
+
+{% block content %}
+
+<div class="hero">
+    <h1>🧠 System Stability Advisor</h1>
+    <p>AI-powered insights to keep your system stable and resilient</p>
+</div>
+<p class="subtle">Analyze past incidents and get recommendations to improve system stability</p>
+
+<div class="card">
+
+    <form method="POST">
+
+       <label>Ask your question</label>
+
+        <input
+            type="text"
+            name="query"
+            placeholder="e.g. Analyze past 60 days and suggest how to improve system stability"
+            style="width:100%; padding:10px; border-radius:6px; border:1px solid #ccc;"
+            required
+        >
+
+        <br><br>
+
+        <button type="submit" class="btn-primary">
+            🔍 Ask Me
+        </button>
+
+    </form>
+
+</div>
+
+{% if advisor_output %}
+<div class="card">
+
+    <h3>📊 Stability Insights</h3>
+
+    <div class="chat bot">
+        {{ advisor_output | safe }}
+    </div>
+
+</div>
+{% endif %}
+
+{% endblock %}
