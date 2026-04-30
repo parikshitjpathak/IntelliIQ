@@ -1,0 +1,234 @@
+{% extends "base.html" %}
+
+{% block title %}Operations Insights{% endblock %}
+
+{% block content %}
+
+<h2>🧭 Operations Insights</h2>
+
+<div class="subtle">⏱ Last Synced: <strong>{{ last_synced }}</strong></div>
+
+<!-- ================= SYSTEM STATUS ================= -->
+<div class="system-banner {{ system_color }}">
+    <span class="status-dot"></span>
+    <strong>System Status: {{ system_status }}</strong>
+</div>
+
+<!-- ================= OVERALL ================= -->
+<h3>🔵 Overall System Metrics</h3>
+
+<div class="row">
+    <div class="card"><b>P1</b><div class="kpi">{{ p1_count }}</div></div>
+    <div class="card"><b>P2</b><div class="kpi">{{ p2_count }}</div></div>
+    <div class="card"><b>P3</b><div class="kpi">{{ p3_count }}</div></div>
+    <div class="card"><b>P4</b><div class="kpi">{{ p4_count }}</div></div>
+    <div class="card"><b>Revenue Impact</b><div class="kpi">{{ revenue_impact }}</div></div>
+</div>
+
+<!-- ================= CHARTS ================= -->
+<div class="row">
+
+    <div class="card">
+        <canvas id="priorityChart"></canvas>
+    </div>
+
+    <div class="card">
+        <canvas id="statusChart"></canvas>
+    </div>
+
+</div>
+
+<div class="card">
+    <canvas id="issuesChart"></canvas>
+</div>
+
+<!-- ================= WEEKLY ================= -->
+<h3>🟡 Weekly Performance</h3>
+
+<div class="row">
+    <div class="card">
+        <b>Current Week</b>
+        <p>Created: {{ cw_created }}</p>
+        <p>Closed: {{ cw_closed }}</p>
+        <p>MTTR: {{ cw_mttr }}</p>
+        <p class="highlight">{{ cw_mttr_change }}% {{ cw_mttr_label }}</p>
+    </div>
+
+    <div class="card">
+        <b>Previous Week</b>
+        <p>Created: {{ pw_created }}</p>
+        <p>Closed: {{ pw_closed }}</p>
+        <p>MTTR: {{ pw_mttr }}</p>
+    </div>
+</div>
+
+<!-- ================= MONTHLY ================= -->
+<h3>🟣 Monthly Performance</h3>
+
+<div class="row">
+    <div class="card">
+        <b>Current Month</b>
+        <p>Created: {{ cm_created }}</p>
+        <p>Closed: {{ cm_closed }}</p>
+        <p>MTTR: {{ cm_mttr }}</p>
+        <p class="highlight">{{ cm_mttr_change }}% {{ cm_mttr_label }}</p>
+    </div>
+
+    <div class="card">
+        <b>Previous Month</b>
+        <p>Created: {{ pm_created }}</p>
+        <p>Closed: {{ pm_closed }}</p>
+        <p>MTTR: {{ pm_mttr }}</p>
+    </div>
+</div>
+
+<!-- ================= TREND ================= -->
+<h3>📈 Incident Trend</h3>
+
+<div class="card">
+    <canvas id="trendChart"></canvas>
+</div>
+
+<!-- ================= CHART JS ================= -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+
+    // SAFE DATA LOAD
+    const issuesRaw = {{ top_issues | tojson | safe }};
+    const statusLabels = {{ status_counts.keys() | list | tojson }};
+    const statusValues = {{ status_counts.values() | list | tojson }};
+
+    // ================= PRIORITY =================
+    new Chart(document.getElementById('priorityChart'), {
+        type: 'bar',
+        data: {
+            labels: ["P1","P2","P3","P4"],
+            datasets: [{
+                label: 'Priority Distribution',
+                data: [{{ p1_count }}, {{ p2_count }}, {{ p3_count }}, {{ p4_count }}]
+            }]
+        }
+    });
+
+    // ================= STATUS =================
+    new Chart(document.getElementById('statusChart'), {
+        type: 'doughnut',
+        data: {
+            labels: statusLabels,
+            datasets: [{
+                label: 'Status Distribution',
+                data: statusValues
+            }]
+        }
+    });
+
+    // ================= TOP ISSUES =================
+    if (issuesRaw && issuesRaw.length > 0) {
+
+        const issueLabels = issuesRaw.map(item => item[0]);
+        const issueValues = issuesRaw.map(item => item[1]);
+
+        new Chart(document.getElementById('issuesChart'), {
+            type: 'bar',
+            data: {
+                labels: issueLabels,
+                datasets: [{
+                    label: 'Top Issues',
+                    data: issueValues
+                }]
+            },
+            options: {
+                plugins: {
+                    legend: { display: false },
+                    title: {
+                        display: true,
+                        text: 'Top Recurring Issues (Cumulative)'
+                    }
+                },
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+
+    }
+
+    // ================= TREND =================
+    new Chart(document.getElementById('trendChart'), {
+        type: 'line',
+        data: {
+            labels: {{ trend_labels | tojson }},
+            datasets: [{
+                label: 'Incident Trend',
+                data: {{ trend_values | tojson }},
+                tension: 0.3
+            }]
+        }
+    });
+
+</script>
+
+<!-- ================= STYLE ================= -->
+<style>
+
+.row {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+}
+
+.card {
+    background: #ffffff;
+    padding: 20px;
+    border-radius: 12px;
+    flex: 1;
+    min-width: 240px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.kpi {
+    font-size: 26px;
+    font-weight: bold;
+}
+
+.subtle {
+    color: #666;
+    margin-bottom: 10px;
+}
+
+.highlight {
+    font-weight: bold;
+    color: #007bff;
+}
+
+/* SYSTEM BANNER */
+.system-banner {
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    font-weight: 500;
+}
+
+.system-banner.green { background: #e6f7ee; color: #1a7f4b; }
+.system-banner.orange { background: #fff4e5; color: #b26a00; }
+.system-banner.red { background: #fdecea; color: #b42318; }
+
+.status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+h3 {
+    margin-top: 30px;
+}
+
+</style>
+
+{% endblock %}
