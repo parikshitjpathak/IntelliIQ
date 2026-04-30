@@ -10,6 +10,7 @@
 from flask import render_template, request
 import sqlite3
 import os
+import markdown
 
 # ==========================================================
 # CONFIGURATION BLOCK
@@ -98,17 +99,23 @@ INSTRUCTIONS:
 ### 🔍 Overview
 
 ### 🛠 Step-by-Step Approach
+(Numbered steps, clear and practical)
+### 💻 Implementation Example (if applicable)
 
-### 💻 Implementation Example (if needed)
+### ⚙️ Automation / Scheduling (if applicable)
 
-### ⚙️ Automation / Scheduling (if needed)
-
-### 📊 Business Perspective (if needed)
+### 📊 Business Perspective (if applicable)
 
 ### ✅ Best Practices
+(3–5 bullet points)
 
 ### ⚠️ Risks / Considerations
+(2–3 points)
 
+IMPORTANT:
+- Do NOT skip sections
+- If not applicable → write "Not Applicable"
+- Keep formatting consistent
 ------------------------------------------------------------
 
 RULES:
@@ -134,7 +141,7 @@ def register_insurance_copilot(app, llm):
     @app.route("/insurance_copilot", methods=["GET", "POST"])
     def insurance_copilot():
 
-        answer = None  # Always initialize
+        formatted_answer = None  # Always initialize
         top_queries = get_top_queries()  # Always load trends
 
         if request.method == "POST":
@@ -165,11 +172,23 @@ def register_insurance_copilot(app, llm):
                     print("Copilot Error:", e)
                     answer = "Error generating response"
 
+                    # ======================================================
+                    # FORMAT ANSWER USING MARKDOWN (NEW)
+                    # ======================================================
+                if answer:
+                    formatted_answer = markdown.markdown(
+                        answer.replace("\n", "  \n"),
+                        extensions=["fenced_code", "tables"]
+                    )
+
+
+
         # ==================================================
         # STEP 5: RETURN RESPONSE
         # ==================================================
         return render_template(
             "insurance_copilot.html",
-            answer=answer,
-            top_queries=top_queries
+            answer=formatted_answer,
+            top_queries=top_queries,
+            active_page="copilot"
         )
