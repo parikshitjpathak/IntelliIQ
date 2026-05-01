@@ -18,11 +18,12 @@ DB_NAME = os.path.join(BASE_DIR, "IntelliIQ.db")
 
 from dotenv import load_dotenv
 
-load_dotenv()
+#load_dotenv("mykeys.env")
+load_dotenv("")
 
 JIRA_BASE_URL = os.getenv("JIRA_URL")
-EMAIL = os.getenv("JIRA_EMAIL")
-API_TOKEN = os.getenv("JIRA_API_TOKEN")
+JIRA_EMAIL = os.getenv("JIRA_EMAIL")
+JIRA_API_TOKEN = os.getenv("JIRA_API_TOKEN")
 
 # ==========================================================
 # FETCH JIRA DETAILS
@@ -201,7 +202,9 @@ def register_ticket_dashboard(app):
                 "jira_ticket_id": r[5]
             })
 
-        return render_template("problem_dashboard.html", problems=problems)
+        return render_template("problem_dashboard.html",
+                               problems=problems,
+                               active_page="problem")
 
 
     # ================================
@@ -217,6 +220,32 @@ def register_ticket_dashboard(app):
         from trend_engine import get_recurring_issues
 
         problem_tickets = get_recurring_issues()
+
+        # ===========================
+        # 🔥 NEW: Map DB tickets
+        # ===========================
+        conn = sqlite3.connect(DB_NAME)
+        cursor = conn.cursor()
+
+        cursor.execute("""
+                       SELECT incident, jira_ticket_id
+                       FROM ProblemTickets
+                       WHERE jira_ticket_id IS NOT NULL
+                       """)
+
+        rows = cursor.fetchall()
+        conn.close()
+
+        # normalize + map
+        existing_map = {
+            r[0].strip().lower(): r[1]
+            for r in rows
+        }
+
+        # attach ticket info
+        for p in problem_tickets:
+            key = p["incident"].strip().lower()
+            p["problem_ticket_id"] = existing_map.get(key)
         tickets = get_all_tickets()
 
 
@@ -225,7 +254,8 @@ def register_ticket_dashboard(app):
             "ticket_dashboard.html",
             tickets=tickets,
             problem_tickets=problem_tickets,
-            early_warnings=early_warnings
+            early_warnings=early_warnings,
+            active_page="tickets"
         )
 
 

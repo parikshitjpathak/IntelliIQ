@@ -187,5 +187,6 @@ def register_critical_metrics(app):
 
             top_issues=top_issues,
 
-            problem_candidates=problem_candidates
+            problem_candidates=problem_candidates,
+            active_page="metrics"
         )

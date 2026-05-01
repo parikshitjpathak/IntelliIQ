@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card">
+    <h2>👋 First Time Here? Start Like This</h2>
+
+    <p>
+        If you’re part of the L1/L2 team, this is how you should naturally use the system during your daily work.
+    </p>
+
+    <div class="highlight">
+        The goal is simple: <b>Understand → Fix → Learn → Prevent</b>
+    </div>
+
+    <h3>🔍 Step 1: Start with Incident Analyzer</h3>
+    <ul>
+        <li>Search for the issue you’re facing</li>
+        <li>The system analyzes and shows:
+            <ul>
+                <li>Impact and priority</li>
+                <li>Suggested troubleshooting steps</li>
+                <li>Similar past incidents</li>
+            </ul>
+        </li>
+    </ul>
+
+    <div class="highlight">
+        <b>Key Feature:</b> If the issue already exists, you’ll see previous Jira tickets.<br>
+        This helps avoid creating duplicate tickets and speeds up resolution.
+    </div>
+
+    <h3>🛠 Step 2: Use Copilot (When Needed)</h3>
+    <ul>
+        <li>If you need deeper understanding or alternative approaches</li>
+        <li>Ask Copilot for:
+            <ul>
+                <li>Detailed troubleshooting steps</li>
+                <li>Possible root causes</li>
+                <li>Fix recommendations</li>
+            </ul>
+        </li>
+    </ul>
+
+    <p>
+        Think of Copilot as your assistant—it helps you move faster, but you still validate the steps.
+    </p>
+
+    <h3>🧠 Step 3: Generate RCA After Fix</h3>
+    <ul>
+        <li>Once the issue is resolved, go to <b>RCA Generator</b></li>
+        <li>Provide:
+            <ul>
+                <li>What happened</li>
+                <li>What you observed</li>
+                <li>What fixed it</li>
+            </ul>
+        </li>
+    </ul>
+
+    <p>
+        The system will generate a structured RCA with root cause, resolution, and preventive actions.
+    </p>
+
+    <div class="highlight">
+        This ensures the same issue is easier to handle next time—or avoided completely.
+    </div>
+
+    <h3>🚨 Step 4: Use System Advisor (Proactive View)</h3>
+    <ul>
+        <li>Use this when you want to look beyond a single issue</li>
+        <li>Ask questions like:
+            <ul>
+                <li>"Is the system stable right now?"</li>
+                <li>"What should we fix to prevent future issues?"</li>
+            </ul>
+        </li>
+    </ul>
+
+    <p>
+        Unlike Analyzer (which is issue-specific), System Advisor looks at <b>overall system health and patterns</b>.
+    </p>
+
+    <div class="highlight">
+        Analyzer = Solve current issue<br>
+        Advisor = Prevent future issues
+    </div>
+
+</div>
+<div class="container">
+
+    <div class="card">
+        <h2>How to Use IntelliIQ</h2>
+        <p>
+            This tool is designed to help you <b>analyze issues, fix them faster, and prevent them from recurring</b>.
+        </p>
+
+        <div class="highlight">
+            <b>Use Copilot to solve the problem.</b><br>
+            <b>Use RCA Generator to ensure it doesn’t happen again.</b>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>🔧 Handling a New Issue</h3>
+        <ul>
+            <li>Start with <b>Incident Analyzer</b> → understand impact and similar past issues</li>
+            <li>Use <b>Copilot</b> → ask how to troubleshoot or fix</li>
+            <li>Apply the suggested steps and validate</li>
+        </ul>
+
+        <p>
+            Copilot gives direction—it doesn’t replace your judgment.
+        </p>
+    </div>
+
+    <div class="card">
+        <h3>🧠 After Fixing the Issue</h3>
+        <ul>
+            <li>Go to <b>RCA Generator</b></li>
+            <li>Provide:
+                <ul>
+                    <li>Issue summary</li>
+                    <li>Observed behavior</li>
+                    <li>Fix applied</li>
+                </ul>
+            </li>
+        </ul>
+
+        <p>
+            This generates a structured RCA including root cause, resolution, and prevention.
+        </p>
+
+        <div class="highlight">
+            You’re not just fixing the issue—you’re building reusable knowledge.
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>🔁 Handling Recurring Issues</h3>
+        <ul>
+            <li>Use Analyzer → check past incidents</li>
+            <li>Identify patterns and frequency</li>
+            <li>Use Copilot to refine troubleshooting</li>
+        </ul>
+    </div>
+
+    <div class="card">
+        <h3>🚨 Using System Advisor</h3>
+        <ul>
+            <li>Ask questions like:
+                <ul>
+                    <li>"Is the system stable right now?"</li>
+                    <li>"What should we fix to prevent issues?"</li>
+                </ul>
+            </li>
+            <li>It analyzes recent incidents and gives actionable insights</li>
+        </ul>
+    </div>
+
+    <div class="card">
+        <h3>✅ Best Practices</h3>
+        <ul>
+            <li>Validate Copilot suggestions before applying</li>
+            <li>Always generate RCA for important issues</li>
+            <li>Focus on patterns, not just individual tickets</li>
+            <li>Use System Advisor proactively</li>
+        </ul>
+    </div>
+
+    <div class="card">
+        <h3>🎯 Final Thought</h3>
+        <div class="highlight">
+            Fix fast. Learn faster. Prevent next.
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container">
+
+    <div class="card">
+        <h2>🧾 Generate Operational Runbook</h2>
+        <p>Answer a few guided questions and get a structured runbook.</p>
+    </div>
+
+    <div class="card chat-box" id="chat-box"></div>
+
+    <div class="card input-box">
+        <input type="text" id="user-input" placeholder="Type your response..." />
+        <button onclick="sendMessage()">Send</button>
+        <button onclick="generateDoc()">Generate Runbook</button>
+    </div>
+
+    <div class="card output-box" id="output">
+        <h3>📄 Generated Runbook</h3>
+        <div id="doc-content"></div>
+        <p><b>Confluence Link:</b> <a id="doc-link" target="_blank"></a></p>
+    </div>
+
+</div>
+
+<style>
+.chat-box {
+    height: 350px;
+    overflow-y: auto;
+}
+
+.output-box {
+    display: none;
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+#doc-content {
+    white-space: normal;
+}
+</style>
+
+<script>
+function appendMessage(sender, text) {
+    let chat = document.getElementById("chat-box");
+    let msg = document.createElement("p");
+    msg.innerHTML = "<b>" + sender + ":</b> " + text.replace(/\n/g, "<br>");
+    chat.appendChild(msg);
+    chat.scrollTop = chat.scrollHeight;
+}
+
+function sendMessage() {
+    let input = document.getElementById("user-input");
+    let message = input.value;
+    if (!message) return;
+
+    appendMessage("You", message);
+    input.value = "";
+
+    fetch("/process_doc_chat", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({message: message})
+    })
+    .then(res => res.json())
+    .then(data => {
+        appendMessage("IntelliIQ AI", data.reply + "<br><i>(" + data.progress + ")</i>");
+    });
+}
+
+function generateDoc() {
+
+    document.getElementById("status-msg").style.display = "block";
+    document.getElementById("genBtn").disabled = true;
+
+    // 👇 Force UI to update before API call
+    setTimeout(() => {
+
+        fetch("/generate_process_doc", { method: "POST" })
+        .then(res => res.json())
+        .then(data => {
+
+            document.getElementById("status-msg").style.display = "none";
+            document.getElementById("genBtn").disabled = false;
+
+            document.getElementById("output").style.display = "block";
+            document.getElementById("doc-content").innerHTML = data.document;
+
+            if (data.link) {
+                document.getElementById("doc-link").href = data.link;
+                document.getElementById("doc-link").textContent = "Open Runbook";
+            }
+        });
+
+    }, 50); // small delay is enough
+}
+</script>
+
+{% endblock %}

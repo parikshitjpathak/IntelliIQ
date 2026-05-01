@@ -20,6 +20,8 @@ from system_advisor import register_system_advisor
 from operations_insights import register_operations_insights
 
 from normalization_engine import normalize_incident
+from help_page import register_help_page
+from process_doc import register_process_doc
 
 #DB_PATH = r"D:\pythonPractice\IntelliIQ.db"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -466,6 +468,7 @@ def get_last_synced_time():
 
 
 
+
 #========= Control tower code comes here ===================
 def get_status_distribution():
 
@@ -751,6 +754,7 @@ chain = prompt | llm | StrOutputParser()
 # ==========================================================
 
 app = Flask(__name__)
+app.secret_key = "intelliiq_secret_key_123"
 #==== Registering the apps used ==================
 register_insurance_copilot(app, llm)
 
@@ -758,6 +762,8 @@ register_ticket_dashboard(app)
 register_critical_metrics(app)
 register_system_advisor(app)
 register_operations_insights(app)
+register_help_page(app)
+register_process_doc(app,llm)
 
 
 #====== Add all apps registered between these blocks
