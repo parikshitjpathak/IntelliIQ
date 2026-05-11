@@ -1,0 +1,270 @@
+{% extends "base.html" %}
+
+{% block title %}Operations Dashboard{% endblock %}
+
+{% block content %}
+
+<h2>🧩 Operations Dashboard</h2>
+
+<!-- ================= ALERTS ================= -->
+{% if early_warnings %}
+<div class="card alert-danger">
+    <h3>🚨 Early Warning Alerts</h3>
+    <ul>
+        {% for w in early_warnings %}
+        <li>⚠️ {{ w.incident }} increased from {{ w.prev_count }} → {{ w.last_count }}</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+<!-- ================= PROBLEM TICKETS ================= -->
+{% if problem_tickets %}
+<div class="card alert-warning">
+    <h3>🚨 Recommended Problem Tickets</h3>
+
+    <table>
+        <tr>
+            <th>Incident</th>
+            <th>Occurrences</th>
+            <th>Window</th>
+            <th>Action</th>
+            <th>Status</th>
+        </tr>
+
+        {% for p in problem_tickets %}
+        <tr>
+            <td>{{ p.incident }}</td>
+            <td>{{ p.count }}</td>
+            <td>{{ p.window_days }}</td>
+
+            <td>
+                {% if p.problem_ticket_id %}
+                    <button disabled>Already Created</button>
+                {% else %}
+                    <button onclick="openPopup(`{{ p.incident }}`, '{{ p.count }}', '{{ p.window_days }}')">
+                        Create Problem Ticket
+                    </button>
+                {% endif %}
+            </td>
+
+            <td>
+                {% if p.problem_ticket_id %}
+                    <a href="https://parikshit-pathak.atlassian.net/browse/{{ p.problem_ticket_id }}" target="_blank">
+                        {{ p.problem_ticket_id }}
+                    </a>
+                {% else %}
+                    Not Created
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+{% endif %}
+
+<!-- ================= PIE CHART ================= -->
+<div class="card">
+    <h3>📊 Incident Distribution</h3>
+
+    {% if top_category %}
+    <p><strong>Top Area:</strong> {{ top_category }} ({{ top_percentage }}%)</p>
+    {% endif %}
+
+    <div style="max-width:400px; margin:auto;">
+        <canvas id="globalPieChart"></canvas>
+    </div>
+</div>
+<!-- ===== Performance Snapshot Trigger ===== -->
+<div class="card" style="text-align:center;">
+    <h3>⚙️ Performance Snapshot</h3>
+    
+    <button id="snapshotBtn" onclick="runSnapshot()" style="padding:10px 20px; font-size:16px;">
+        Show Top Performers
+    </button>
+
+    <p id="snapshotStatus" style="margin-top:10px;"></p>
+</div>
+
+<!-- ================= RISK SUMMARY ================= -->
+<div class="card">
+    <h3>📊 Risk & SLA Summary</h3>
+
+    <div style="display:flex; justify-content:space-between; text-align:center;">
+
+        <div style="flex:1;">
+            <strong>🔴 High Risk</strong><br>
+            {{ summary.high }}<br>
+            <small>Breached OR To Do nearing SLA</small>
+        </div>
+
+        <div style="flex:1;">
+            <strong>🟠 Medium Risk</strong><br>
+            {{ summary.medium }}<br>
+            <small>In Progress nearing SLA</small>
+        </div>
+
+        <div style="flex:1;">
+            <strong>🟢 Safe</strong><br>
+            {{ summary.safe }}<br>
+            <small>Not near breach OR SLA met</small>
+        </div>
+
+        <div style="flex:1;">
+            <strong>🟢 SLA Met</strong><br>
+            {{ summary.sla_met }}
+        </div>
+
+        <div style="flex:1;">
+            <strong>🔴 SLA Breached</strong><br>
+            {{ summary.sla_breached }}<br>
+            <small>Closed + Open breaches</small>
+        </div>
+
+    </div>
+</div>
+<!-- ================= ANALYST RISK VIEW ================= -->
+<div class="card">
+    <h3>👥 Analyst Risk View</h3>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Analyst</th>
+                <th>🔴 High</th>
+                <th>🟠 Medium</th>
+                <th>Total Risk</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for analyst, data in analyst_summary.items() %}
+            <tr>
+                <td>{{ analyst }}</td>
+                <td>{{ data.high }}</td>
+                <td>{{ data.medium }}</td>
+                <td>{{ data.total }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- ================= UNIFIED TABLE ================= -->
+<div class="card">
+    <h3>🎟 All Tickets</h3>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Ticket ID</th>
+                <th>Problem Ticket</th>
+                <th>Assignee</th>
+                <th>Incident</th>
+                <th>Category</th>
+                <th>Logged Date</th>
+                <th>Current Status</th>
+                <th>SLA Status</th>
+                <th>Due Date</th>
+                <th>Resolved Date</th>
+                <th>SLA Met</th>
+                <th>Days Open</th>
+                <th>Risk</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for t in tickets %}
+            <tr>
+                <td><a href="{{ t.jira_link }}" target="_blank">{{ t.ticket_id }}</a></td>
+                <td>{{ t.problem_ticket_id or "-" }}</td>
+                <td>{{ t.assignee }}</td>
+                <td>{{ t.incident }}</td>
+                <td>{{ t.category }}</td>
+                <td>{{ t.date }}</td>
+                <td>{{t.status}}</td>
+                <td>{{ t.sla_status }}</td>
+                <td>{{ t.due_date_display }}</td>
+                <td>{{t.resolved_date_display}}</td>
+                <td>
+                    {% if t.sla_met == "YES" %}
+                    🟢 Yes
+                    {% elif t.sla_met == "NO" %}
+                    🔴 No
+                    {% else %}
+                    -
+                    {% endif %}
+                </td>
+                
+                <td>{{ t.days_open }}</td>
+                <td>
+                    {% if t.risk_level == "High" %}
+                    🔴 High
+                    {% elif t.risk_level == "Medium" %}
+                    🟠 Medium
+                    {% elif t.risk_level == "Closed Breached" %}
+                    ⚫ Closed Breached
+                    {% else %}
+                    🟢 Safe
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- ================= CHART JS ================= -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+const pieCtx = document.getElementById('globalPieChart');
+
+if (pieCtx) {
+    const data = {
+        labels: [{% for key in global_category_counts.keys() %}"{{ key }}",{% endfor %}],
+        datasets: [{
+            data: [{% for value in global_category_counts.values() %}{{ value }},{% endfor %}]
+        }]
+    };
+
+    if (data.datasets[0].data.some(v => v > 0)) {
+        new Chart(pieCtx, { type: 'pie', data: data });
+    }
+}
+</script>
+
+<script>
+function runSnapshot() {
+
+    const btn = document.getElementById("snapshotBtn");
+    const status = document.getElementById("snapshotStatus");
+
+    // Disable button
+    btn.disabled = true;
+    btn.innerText = "Processing...";
+
+    // Show immediate feedback
+    status.innerText = "Fetching top performers...";
+
+    fetch('/run_performance_snapshot')
+    .then(response => response.text())
+    .then(data => {
+
+        // Show popup instead of instant refresh
+        alert("Fetching top performers completed.\nClick OK to refresh dashboard.");
+
+        // Reload only after user confirms
+        location.reload();
+    })
+    .catch(error => {
+        status.innerText = "Error running snapshot";
+
+        // Re-enable button if error
+        btn.disabled = false;
+        btn.innerText = "Generate Performance Snapshot";
+    });
+}
+</script>
+
+{% endblock %}

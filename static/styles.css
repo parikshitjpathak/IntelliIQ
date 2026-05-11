@@ -360,3 +360,27 @@ textarea {
 .help-link:hover {
     background-color: #f0f6ff;
 }
+
+
+.row-critical {
+    background-color: #ffe5e5;
+}
+
+.row-moderate {
+    background-color: #fff6e0;
+}
+
+.row-good {
+    background-color: #e8f5e9;
+}
+
+
+.analyst-link {
+    text-decoration: none;
+    font-weight: 600;
+    color: #1a73e8;
+}
+
+.analyst-link:hover {
+    text-decoration: underline;
+}

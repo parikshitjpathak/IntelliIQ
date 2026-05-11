@@ -1,52 +1,45 @@
-
-
-
 <div class="nav-links">
 
     <span class="subtle" style="margin-right:10px;">🔗 Menu:</span>
 
-    <a href="/" class="{% if active_page == 'home' %}active-link{% endif %}">🏠 Home</a>
+    <a href="/" class="{% if active_page == 'home' %}active-link{% endif %}">
+        🏠 Home
+    </a>
 
     <a href="/insurance_copilot" class="{% if active_page == 'copilot' %}active-link{% endif %}">
         🤖 Insurance Copilot
     </a>
 
     <a href="/system_advisor" class="{% if active_page == 'advisor' %}active-link{% endif %}">
-    🧠 System Advisor
-</a>
-
-    <a href="/dashboard" class="{% if active_page == 'dashboard' %}active-link{% endif %}">
-        📊 Incident Dashboard
+        🧠 System Advisor
     </a>
 
     <a href="/rca" class="{% if active_page == 'rca' %}active-link{% endif %}">
         🧾 RCA Generator
     </a>
 
-    <a href="/process_doc" title="Generate operational runbooks using AI">
-    🧾 Runbook Generator
+    <a href="/process_doc" class="{% if active_page == 'runbook' %}active-link{% endif %}">
+        🧾 Runbook Generator
     </a>
 
-    <a href="/ticket_dashboard" class="{% if active_page == 'tickets' %}active-link{% endif %}">
-        🎟 Tickets Dashboard
+    <a href="/runbook_repository" class="{% if active_page == 'repository' %}active-link{% endif %}">
+        📚 Runbook Repository
+    </a>
+
+    <a href="/operations_dashboard" class="{% if active_page == 'dashboard' %}active-link{% endif %}">
+        📊 Operations Dashboard
     </a>
 
     <a href="/problem_dashboard" class="{% if active_page == 'problem' %}active-link{% endif %}">
-    🧩 Problem Dashboard
+        🧩 Problem Dashboard
     </a>
 
-    <a href="/critical_metrics" class="{% if active_page == 'metrics' %}active-link{% endif %}">
-        📈 Critical Metrics
+   <a href="/project_health" class="{% if active_page == 'project_health' %}active-link{% endif %}">
+        📊 Project Health
     </a>
 
-
-
-    <a href="/control_tower" class="{% if active_page == 'control' %}active-link{% endif %}">
-        🧭 Control Tower
+    <a href="/analyst_intelligence" class="{% if active_page == 'analyst' %}active-link{% endif %}">
+        🧑‍💻 Analyst Intelligence
     </a>
-
-  <!--  <a href="/operations_insights" class="{% if active_page == 'insights' %}active-link{% endif %}">
-      📊 Operations Insights
-    </a>-->
 
 </div>

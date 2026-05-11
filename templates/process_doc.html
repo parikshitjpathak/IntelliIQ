@@ -6,26 +6,75 @@
 
     <div class="card">
         <h2>🧾 Generate Operational Runbook</h2>
-        <p>Answer a few guided questions and get a structured runbook.</p>
+        <p>Answer guided questions and generate a structured enterprise runbook.</p>
     </div>
 
-    <div class="card chat-box" id="chat-box"></div>
+    <label><b>Select Runbook Type:</b></label><br>
+
+    <select id="runbook-type">
+        <option value="process">Process Documentation</option>
+        <option value="incident">Incident / Troubleshooting</option>
+    </select>
+
+    <br><br>
+
+    <input type="text"
+           id="runbook_title"
+           placeholder="Enter runbook title" />
+
+    <br><br>
+
+    <input type="text"
+           id="created_by"
+           placeholder="Enter your name" />
+
+    <br><br>
 
     <div class="card input-box">
-        <input type="text" id="user-input" placeholder="What runbook you want to generate?" /><br><br>
-        <button onclick="sendMessage()">Send</button>
-        <button onclick="generateDoc()">Generate Runbook</button>
+
+        <input type="text"
+               id="user-input"
+               placeholder="Click Send to begin guided runbook creation"
+               disabled />
+
+        <br><br>
+
+        <button onclick="sendMessage()" id="sendBtn">
+            Send
+        </button>
+
+        <button onclick="generateDoc()" id="genBtn" disabled="disabled">
+            Generate Runbook
+        </button>
+
+        <br><br>
+
+        <div class="card chat-box" id="chat-box"></div>
+
+        <p id="status-msg"
+           style="display:none; color:blue;">
+            Generating runbook... please wait.
+        </p>
+
     </div>
 
     <div class="card output-box" id="output">
+
         <h3>📄 Generated Runbook</h3>
+
         <div id="doc-content"></div>
-        <p><b>Confluence Link:</b> <a id="doc-link" target="_blank"></a></p>
+
+        <p>
+            <b>Confluence Link:</b>
+            <a id="doc-link" target="_blank"></a>
+        </p>
+
     </div>
 
 </div>
 
 <style>
+
 .chat-box {
     height: 350px;
     overflow-y: auto;
@@ -40,65 +89,246 @@
 #doc-content {
     white-space: normal;
 }
+
 </style>
 
 <script>
+
+let started = false;
+let workflowCompleted = false;
+
 function appendMessage(sender, text) {
+
     let chat = document.getElementById("chat-box");
+
     let msg = document.createElement("p");
-    msg.innerHTML = "<b>" + sender + ":</b> " + text.replace(/\n/g, "<br>");
+
+    msg.innerHTML =
+        "<b>" + sender + ":</b> "
+        + text.replace(/\n/g, "<br>");
+
     chat.appendChild(msg);
+
     chat.scrollTop = chat.scrollHeight;
 }
 
+function lockMetadataFields() {
+
+    document.getElementById("runbook-type").disabled = true;
+    document.getElementById("runbook_title").disabled = true;
+    document.getElementById("created_by").disabled = true;
+}
+
 function sendMessage() {
-    let input = document.getElementById("user-input");
-    let message = input.value;
-    if (!message) return;
+
+    let runbookType =
+        document.getElementById("runbook-type").value;
+
+    let runbookTitle =
+        document.getElementById("runbook_title").value;
+
+    let createdBy =
+        document.getElementById("created_by").value;
+
+    let input =
+        document.getElementById("user-input");
+
+    let message =
+        input.value.trim();
+
+    // =====================================================
+    // START FLOW
+    // =====================================================
+
+    if (!started) {
+
+        if (!runbookTitle) {
+            alert("Please enter runbook title");
+            return;
+        }
+
+        if (!createdBy) {
+            alert("Please enter your name");
+            return;
+        }
+
+        started = true;
+
+        lockMetadataFields();
+
+        input.disabled = false;
+
+        input.placeholder = "Answer the guided question...";
+
+        fetch("/process_doc_chat", {
+
+            method: "POST",
+
+            headers: {
+                "Content-Type": "application/json"
+            },
+
+            body: JSON.stringify({
+                message: "",
+                runbook_type: runbookType,
+                runbook_title: runbookTitle
+            })
+
+        })
+        .then(res => res.json())
+        .then(data => {
+
+            appendMessage(
+                "IntelliIQ AI",
+                data.reply + "<br><i>(" + data.progress + ")</i>"
+            );
+
+        });
+
+        return;
+    }
+
+    // =====================================================
+    // VALIDATE EMPTY
+    // =====================================================
+
+    if (!message) {
+
+        alert("Please enter your response");
+
+        return;
+    }
 
     appendMessage("You", message);
+
     input.value = "";
 
-        // 👇 CHANGE PLACEHOLDER AFTER FIRST INPUT
-    input.placeholder = "Type your response...";
-
     fetch("/process_doc_chat", {
+
         method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({message: message})
+
+        headers: {
+            "Content-Type": "application/json"
+        },
+
+        body: JSON.stringify({
+            message: message,
+            runbook_type: runbookType,
+            runbook_title: runbookTitle
+        })
+
     })
     .then(res => res.json())
     .then(data => {
-        appendMessage("IntelliIQ AI", data.reply + "<br><i>(" + data.progress + ")</i>");
+
+        appendMessage(
+            "IntelliIQ AI",
+            data.reply + "<br><i>(" + data.progress + ")</i>"
+        );
+
+        if (data.progress === "Workflow completed") {
+
+            workflowCompleted = true;
+
+            document.getElementById("genBtn").disabled = false;
+
+            input.disabled = true;
+
+            input.placeholder = "Workflow completed";
+        }
+
     });
 }
 
 function generateDoc() {
 
-    document.getElementById("status-msg").style.display = "block";
-    document.getElementById("genBtn").disabled = true;
+    if (!workflowCompleted) {
 
-    // 👇 Force UI to update before API call
-    setTimeout(() => {
+        alert("Please complete the workflow first");
 
-        fetch("/generate_process_doc", { method: "POST" })
-        .then(res => res.json())
-        .then(data => {
+        return;
+    }
 
-            document.getElementById("status-msg").style.display = "none";
-            document.getElementById("genBtn").disabled = false;
+    let createdBy =
+        document.getElementById("created_by").value;
 
-            document.getElementById("output").style.display = "block";
-            document.getElementById("doc-content").innerHTML = data.document;
+    let runbookType =
+        document.getElementById("runbook-type").value;
 
-            if (data.link) {
-                document.getElementById("doc-link").href = data.link;
-                document.getElementById("doc-link").textContent = "Open Runbook";
-            }
-        });
+    let runbookTitle =
+        document.getElementById("runbook_title").value;
 
-    }, 50); // small delay is enough
+    let status =
+        document.getElementById("status-msg");
+
+    let btn =
+        document.getElementById("genBtn");
+
+    status.style.display = "block";
+
+    btn.disabled = true;
+
+    fetch("/generate_process_doc", {
+
+        method: "POST",
+
+        headers: {
+            "Content-Type": "application/json"
+        },
+
+        body: JSON.stringify({
+
+            created_by: createdBy,
+            runbook_type: runbookType,
+            runbook_title: runbookTitle
+
+        })
+
+    })
+    .then(res => res.json())
+    .then(data => {
+
+        status.style.display = "none";
+
+        document.getElementById("output").style.display = "block";
+
+        document.getElementById("doc-content").innerHTML =
+            "<p style='color:green; font-weight:bold;'>Runbook generated successfully.</p>";
+
+        if (data.link) {
+
+            document.getElementById("doc-link").href =
+                data.link;
+
+            document.getElementById("doc-link").textContent =
+                "Open Runbook";
+        }
+
+    })
+    .catch(err => {
+
+        console.error("Error:", err);
+
+        alert("Runbook generation failed");
+
+        status.style.display = "none";
+
+        btn.disabled = false;
+    });
 }
+
+document.getElementById("user-input")
+.addEventListener("keypress", function(event) {
+
+    if (event.key === "Enter") {
+
+        event.preventDefault();
+
+        sendMessage();
+    }
+
+});
+
 </script>
 
 {% endblock %}

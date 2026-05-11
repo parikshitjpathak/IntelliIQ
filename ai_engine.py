@@ -8,7 +8,7 @@ from langchain_core.output_parsers import StrOutputParser
 # Load env
 #load_dotenv(dotenv_path="D:/pythonPractice/mykeys.env")
 
-load_dotenv()
+load_dotenv("mykeys.env")
 
 # Initialize LLM
 llm = ChatOpenAI(

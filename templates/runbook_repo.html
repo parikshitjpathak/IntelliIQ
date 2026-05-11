@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container">
+
+    <div class="card">
+        <h2>📚 Runbook Repository</h2>
+        <p>
+            Search and explore all generated operational runbooks.
+        </p>
+    </div>
+
+    <!-- FILTERS -->
+
+    <div class="card">
+
+        <input type="text"
+               id="searchTitle"
+               placeholder="Search by runbook title">
+
+        <br><br>
+
+        <input type="text"
+               id="searchCreator"
+               placeholder="Filter by creator">
+
+        <br><br>
+
+        <select id="searchType">
+            <option value="">All Runbook Types</option>
+            <option value="process">Process</option>
+            <option value="incident">Incident</option>
+        </select>
+
+        <br><br>
+
+        <button onclick="loadRunbooks()">
+            Search
+        </button>
+
+        <button onclick="resetFilters()">
+            Reset
+        </button>
+
+    </div>
+
+    <!-- TABLE -->
+
+    <div class="card">
+
+        <table id="runbookTable">
+
+            <thead>
+
+                <tr>
+                    <th>Runbook Name</th>
+                    <th>Version</th>
+                    <th>Type</th>
+                    <th>Created By</th>
+                    <th>Created At</th>
+                    <th>Status</th>
+                    <th>Open</th>
+                </tr>
+
+            </thead>
+
+            <tbody id="runbookBody">
+
+            </tbody>
+
+        </table>
+
+        <p id="emptyMessage" style="display:none;">
+            No runbooks found.
+        </p>
+
+    </div>
+
+</div>
+
+<style>
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 12px;
+    border-bottom: 1px solid #ddd;
+    text-align: left;
+}
+
+th {
+    background-color: #330eec;
+}
+
+.status-success {
+    color: green;
+    font-weight: bold;
+}
+
+.status-failed {
+    color: red;
+    font-weight: bold;
+}
+
+</style>
+
+<script>
+
+function loadRunbooks() {
+
+    let title =
+        document.getElementById("searchTitle").value;
+
+    let creator =
+        document.getElementById("searchCreator").value;
+
+    let type =
+        document.getElementById("searchType").value;
+
+    fetch("/get_runbooks", {
+
+        method: "POST",
+
+        headers: {
+            "Content-Type": "application/json"
+        },
+
+        body: JSON.stringify({
+            title: title,
+            creator: creator,
+            type: type
+        })
+
+    })
+    .then(res => res.json())
+    .then(data => {
+
+        let tbody =
+            document.getElementById("runbookBody");
+
+        tbody.innerHTML = "";
+
+        if (data.length === 0) {
+
+            document.getElementById("emptyMessage").style.display = "block";
+
+            return;
+        }
+
+        document.getElementById("emptyMessage").style.display = "none";
+
+        data.forEach(row => {
+
+            let statusClass =
+                row.status === "Success"
+                ? "status-success"
+                : "status-failed";
+
+            let tr = `
+                <tr>
+                    <td>${row.bookname}</td>
+                    <td>v${row.runbook_ver}</td>
+                    <td>${row.runbook_type}</td>
+                    <td>${row.createdby}</td>
+                    <td>${row.created_at}</td>
+                    <td class="${statusClass}">
+                        ${row.status}
+                    </td>
+                    <td>
+                        <a href="${row.bookurl}"
+                           target="_blank">
+                           Open
+                        </a>
+                    </td>
+                </tr>
+            `;
+
+            tbody.innerHTML += tr;
+
+        });
+
+    });
+
+}
+
+function resetFilters() {
+
+    document.getElementById("searchTitle").value = "";
+    document.getElementById("searchCreator").value = "";
+    document.getElementById("searchType").value = "";
+
+    loadRunbooks();
+}
+
+window.onload = function() {
+
+    loadRunbooks();
+
+};
+
+</script>
+
+{% endblock %}

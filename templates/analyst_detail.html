@@ -1,0 +1,304 @@
+{% extends "base.html" %}
+
+{% block content %}
+<a href="/analyst_intelligence">← Back to Analyst Dashboard</a>
+
+<h2>👤 {{ analyst }}</h2>
+
+<div class="card">
+    <h3>🧠 Capability Analysis</h3>
+
+    <h4>✅ Strengths</h4>
+    {% if strengths %}
+        {% for s in strengths %}
+            <p>{{ s }}</p>
+        {% endfor %}
+    {% else %}
+        <p>No clear strengths identified</p>
+    {% endif %}
+
+    <h4>⚠️ Weaknesses</h4>
+    {% if weaknesses %}
+        {% for w in weaknesses %}
+            <p>{{ w }}</p>
+        {% endfor %}
+    {% else %}
+        <p>No major weaknesses</p>
+    {% endif %}
+
+    <h4>📚 Recommended Focus Areas</h4>
+    {% if recommendations %}
+        {% for r in recommendations %}
+            <p>{{ r }}</p>
+        {% endfor %}
+    {% else %}
+        <p>No recommendations</p>
+    {% endif %}
+</div>
+<!-- ====================================================== -->
+<!-- EXPERTISE AREAS -->
+<!-- ====================================================== -->
+
+<div class="card">
+
+    <h3>🏆 Expertise Areas</h3>
+
+    {% if expertise_areas %}
+
+        <ul>
+            {% for item in expertise_areas %}
+                <li>{{ item }}</li>
+            {% endfor %}
+        </ul>
+
+    {% else %}
+
+        <p>No strong expertise areas identified yet.</p>
+
+    {% endif %}
+
+</div>
+
+
+<!-- ====================================================== -->
+<!-- OPERATIONAL RISK AREAS -->
+<!-- ====================================================== -->
+
+<div class="card">
+
+    <h3>⚠️ Operational Risk Areas</h3>
+
+    {% if risk_areas %}
+
+        <ul>
+            {% for item in risk_areas %}
+                <li>{{ item }}</li>
+            {% endfor %}
+        </ul>
+
+    {% else %}
+
+        <p>No major operational risk areas identified.</p>
+
+    {% endif %}
+
+</div>
+
+
+<!-- ====================================================== -->
+<!-- TRAINING RECOMMENDATIONS -->
+<!-- ====================================================== -->
+
+<div class="card">
+
+    <h3>🎯 Recommended Training Focus</h3>
+
+    {% if recommendations %}
+
+        <ul>
+            {% for item in recommendations %}
+                <li>{{ item }}</li>
+            {% endfor %}
+        </ul>
+
+    {% else %}
+
+        <p>No training recommendations available.</p>
+
+    {% endif %}
+
+</div>
+
+
+<!-- ====================================================== -->
+<!-- OPERATIONAL BENEFITS -->
+<!-- ====================================================== -->
+
+<div class="card">
+
+    <h3>📈 Expected Operational Benefits</h3>
+
+    {% if operational_benefits %}
+
+        <ul>
+            {% for item in operational_benefits %}
+                <li>{{ item }}</li>
+            {% endfor %}
+        </ul>
+
+    {% else %}
+
+        <p>No operational benefit insights available.</p>
+
+    {% endif %}
+
+</div>
+
+
+<!-- ====================================================== -->
+<!-- PRODUCTIVITY IMPACT -->
+<!-- ====================================================== -->
+
+<div class="card">
+
+    <h3>⚡ Productivity Impact Insights</h3>
+
+    {% if productivity_impacts %}
+
+        <ul>
+            {% for item in productivity_impacts %}
+                <li>{{ item }}</li>
+            {% endfor %}
+        </ul>
+
+    {% else %}
+
+        <p>No productivity impact insights available.</p>
+
+    {% endif %}
+
+</div>
+
+<!-- ====================================================== -->
+<!-- SLA RISK INSIGHTS -->
+<!-- ====================================================== -->
+
+<div class="card">
+
+    <h3>🚨 SLA Risk Insights</h3>
+
+    {% if sla_risk_insights %}
+
+        <ul>
+            {% for item in sla_risk_insights %}
+                <li>{{ item }}</li>
+            {% endfor %}
+        </ul>
+
+    {% else %}
+
+        <p>No major SLA risk patterns identified.</p>
+
+    {% endif %}
+
+</div>
+
+
+<!-- ====================================================== -->
+<!-- MTTR IMPROVEMENT SUGGESTIONS -->
+<!-- ====================================================== -->
+
+<div class="card">
+
+    <h3>⏱ MTTR Improvement Suggestions</h3>
+
+    {% if mttr_suggestions %}
+
+        <ul>
+            {% for item in mttr_suggestions %}
+                <li>{{ item }}</li>
+            {% endfor %}
+        </ul>
+
+    {% else %}
+
+        <p>No MTTR improvement suggestions available.</p>
+
+    {% endif %}
+
+</div>
+
+
+<!-- ====================================================== -->
+<!-- CAPABILITY NOTES -->
+<!-- ====================================================== -->
+
+<div class="card">
+
+    <h3>🧠 Operational Observations</h3>
+
+    {% if capability_notes %}
+
+        <ul>
+            {% for item in capability_notes %}
+                <li>{{ item }}</li>
+            {% endfor %}
+        </ul>
+
+    {% else %}
+
+        <p>No operational observations available.</p>
+
+    {% endif %}
+
+</div>
+
+
+<div class="card">
+    <p><b>Total:</b> {{ summary.total }}</p>
+    <p><b>Closed:</b> {{ summary.closed }} | <b>Open:</b> {{ summary.open }}</p>
+    <p><b>Problem Tickets:</b> {{ summary.problem_tickets }}</p>
+</div>
+
+<div class="card">
+    <h3>📊 SLA Breakdown</h3>
+    <p>Closed Met: {{ summary.closed_met }}</p>
+    <p>Closed Breach: {{ summary.closed_breach }}</p>
+    <p>Open Breach: {{ summary.open_breach }}</p>
+    <p>At Risk: {{ summary.at_risk }}</p>
+</div>
+
+<div class="card">
+    <h3>📁 Category Breakdown</h3>
+    {% for c in category %}
+        <p>{{ c[0] }} → {{ c[1] }}</p>
+    {% endfor %}
+</div>
+
+<div class="card">
+    <h3>⚡ Priority Breakdown</h3>
+    {% for p in priority %}
+        <p>{{ p[0] }} → {{ p[1] }}</p>
+    {% endfor %}
+</div>
+
+<div class="card">
+    <h3>🚨 Delay Drivers</h3>
+    {% for b in breach %}
+        <p>{{ b[0] }} → {{ b[1] }}</p>
+    {% endfor %}
+</div>
+
+<div class="card">
+    <h3>🤖 Insight</h3>
+    <p>{{ insight }}</p>
+</div>
+
+<div class="card">
+    <h3>📋 Tickets</h3>
+
+    <table>
+        <tr>
+            <th>Ticket</th>
+            <th>Category</th>
+            <th>Status</th>
+            <th>SLA</th>
+        </tr>
+
+        {% for t in tickets %}
+        <tr>
+            <td>
+                 <a href="https://parikshit-pathak.atlassian.net/browse/{{ t.ticket_id }}"
+                target="_blank">
+                    {{ t.ticket_id }}
+                </a>
+            </td>
+            <td>{{ t.category }}</td>
+            <td>{{ t.status }}</td>
+            <td>{{ t.sla_status }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
+{% endblock %}

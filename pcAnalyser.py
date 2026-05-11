@@ -4,26 +4,34 @@
 # ==========================================================
 from kb_engine import search_kb as search_kb_new
 from suggestions_engine import generate_suggestions
-from ticketing_service import create_jira_ticket, add_jira_comment, create_confluence_page
+from ticketing_service import (
+    create_jira_ticket,
+    add_jira_comment,
+    create_confluence_page,
+)
 from decision_engine import get_decision
 from trend_engine import calculate_trends
 from domain_engine import enhance_with_domain
 from flask import Flask, render_template, request
+from project_health import register_project_health
 import json
 import time
 import os
 import sqlite3
-from ticket_dashboard import register_ticket_dashboard
+
+from ticket_dashboard import register_ticket_dashboard, get_all_tickets
 from insurance_copilot import register_insurance_copilot
 from critical_metrics import register_critical_metrics
 from system_advisor import register_system_advisor
-from operations_insights import register_operations_insights
 
+from performance_service import get_top_performers, get_analyst_performance, generate_analyst_insights
 from normalization_engine import normalize_incident
 from help_page import register_help_page
 from process_doc import register_process_doc
+from analyst_intelligence import register_analyst_intelligence
+from performance_engine import generate_performance_snapshot
 
-#DB_PATH = r"D:\pythonPractice\IntelliIQ.db"
+# DB_PATH = r"D:\pythonPractice\IntelliIQ.db"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_NAME = os.path.join(BASE_DIR, "IntelliIQ.db")
 
@@ -37,15 +45,19 @@ from langchain_core.output_parsers import StrOutputParser
 import requests
 from requests.auth import HTTPBasicAuth
 from datetime import datetime
-#============= for telegram config======================
+from analyst_detail import register_analyst_detail
+
+# ============= for telegram config======================
 
 import requests
 import os
 
-#===================== Top Analysts clisuure======================
+
+
+# ===================== Top Analysts clisuure======================
+
 
 def get_top_analysts():
-
 
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
@@ -65,20 +77,15 @@ def get_top_analysts():
 
     analysts = []
     for row in results:
-        analysts.append({
-            "name": row[0],
-            "count": row[1]
-        })
+        analysts.append({"name": row[0], "count": row[1]})
 
     return analysts
 
 
+# ====================== Analyst clisure ends here=====================
 
 
-
-#====================== Analyst clisure ends here=====================
-
-#================== top risks areas function ==========================
+# ================== top risks areas function ==========================
 def get_top_risks():
 
     conn = sqlite3.connect(DB_NAME)
@@ -88,7 +95,8 @@ def get_top_risks():
 
     seven_days_ago = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
 
-    cursor.execute("""
+    cursor.execute(
+        """
                    SELECT incident,
                           priority,
                           due_date,
@@ -100,7 +108,9 @@ def get_top_risks():
                      AND status NOT IN ('Done', 'Closed')
                      AND date >= ?
                    GROUP BY LOWER (TRIM (incident))
-                   """, (seven_days_ago,))
+                   """,
+        (seven_days_ago,),
+    )
 
     rows = cursor.fetchall()
     conn.close()
@@ -121,11 +131,17 @@ def get_top_risks():
                 status = "BREACHED" if due_date < now else "AT_RISK"
 
                 if normalized not in risk_dict or due_date < risk_dict[normalized][2]:
-                    risk_dict[normalized] = (incident, priority, due_date, count, ticket_list, status)
+                    risk_dict[normalized] = (
+                        incident,
+                        priority,
+                        due_date,
+                        count,
+                        ticket_list,
+                        status,
+                    )
 
         except:
             continue
-
 
     risks = list(risk_dict.values())
     risks.sort(key=lambda x: x[2])
@@ -133,9 +149,10 @@ def get_top_risks():
     return risks[:3]
 
 
-#================== top risks areas closed here =============================
+# ================== top risks areas closed here =============================
 
-#==================== aging tickets function here=========================
+
+# ==================== aging tickets function here=========================
 def get_aging_tickets():
     from datetime import datetime
 
@@ -171,14 +188,11 @@ def get_aging_tickets():
     return aging_list[:3]
 
 
+# ======================= aging tickets funcion ends here========================
 
 
+# ============== trend for tickets performance===============================
 
-
-#======================= aging tickets funcion ends here========================
-
-
-#============== trend for tickets performance===============================
 
 def get_trend_indicator(trend_data):
     created = trend_data.get("created", 0)
@@ -192,16 +206,11 @@ def get_trend_indicator(trend_data):
         return "Stable ➖"
 
 
+# ====================== trend for tickets performance ends here===================
 
 
+# ===================== SLA Widget code ===========================
 
-
-#====================== trend for tickets performance ends here===================
-
-
-
-
-#===================== SLA Widget code ===========================
 
 def get_sla_status_distribution():
     import sqlite3
@@ -221,11 +230,7 @@ def get_sla_status_distribution():
 
     now = datetime.now()
 
-    sla_counts = {
-        "On Track": 0,
-        "At Risk": 0,
-        "Breached": 0
-    }
+    sla_counts = {"On Track": 0, "At Risk": 0, "Breached": 0}
 
     for (due_date_str,) in rows:
         try:
@@ -244,9 +249,11 @@ def get_sla_status_distribution():
 
     return sla_counts
 
-#==================== SLA widget code ends ============================
 
-#======================= SLA updates ==============================
+# ==================== SLA widget code ends ============================
+
+# ======================= SLA updates ==============================
+
 
 def get_sla_health(sla_counts):
     total = sum(sla_counts.values())
@@ -270,22 +277,13 @@ def get_sla_health(sla_counts):
     else:
         status = "Critical 🔴"
 
-    return {
-        "percentage": percentage,
-        "breached": breached,
-        "status": status
-    }
+    return {"percentage": percentage, "breached": breached, "status": status}
 
 
+# ==================== SLA updates end =================================
 
 
-
-#==================== SLA updates end =================================
-
-
-
-
-#==================== week on week intelligence trned =======================
+# ==================== week on week intelligence trned =======================
 def get_weekly_metrics():
 
     from datetime import datetime, timedelta
@@ -301,61 +299,82 @@ def get_weekly_metrics():
     previous_end = current_start
 
     # ---------- CURRENT WEEK ----------
-    cursor.execute("""
+    cursor.execute(
+        """
         SELECT COUNT(*) FROM knowledgeBase
         WHERE date >= ?
-    """, (current_start.strftime("%Y-%m-%d"),))
+    """,
+        (current_start.strftime("%Y-%m-%d"),),
+    )
     current_created = cursor.fetchone()[0]
 
-    cursor.execute("""
+    cursor.execute(
+        """
         SELECT COUNT(*) FROM knowledgeBase
         WHERE resolved_date IS NOT NULL
         AND resolved_date >= ?
-    """, (current_start.strftime("%Y-%m-%d"),))
+    """,
+        (current_start.strftime("%Y-%m-%d"),),
+    )
     current_closed = cursor.fetchone()[0]
 
-    cursor.execute("""
+    cursor.execute(
+        """
         SELECT COUNT(*) FROM knowledgeBase
         WHERE due_date < ?
         AND status NOT IN ('Done', 'Closed')
-    """, (today.strftime("%Y-%m-%d %H:%M:%S"),))
+    """,
+        (today.strftime("%Y-%m-%d %H:%M:%S"),),
+    )
     current_missed = cursor.fetchone()[0]
 
     # ---------- PREVIOUS WEEK ----------
-    cursor.execute("""
+    cursor.execute(
+        """
         SELECT COUNT(*) FROM knowledgeBase
         WHERE date >= ? AND date < ?
-    """, (
-        previous_start.strftime("%Y-%m-%d"),
-        previous_end.strftime("%Y-%m-%d")
-    ))
+    """,
+        (previous_start.strftime("%Y-%m-%d"), previous_end.strftime("%Y-%m-%d")),
+    )
     prev_created = cursor.fetchone()[0]
 
-    cursor.execute("""
+    cursor.execute(
+        """
         SELECT COUNT(*) FROM knowledgeBase
         WHERE resolved_date IS NOT NULL
         AND resolved_date >= ? AND resolved_date < ?
-    """, (
-        previous_start.strftime("%Y-%m-%d"),
-        previous_end.strftime("%Y-%m-%d")
-    ))
+    """,
+        (previous_start.strftime("%Y-%m-%d"), previous_end.strftime("%Y-%m-%d")),
+    )
     prev_closed = cursor.fetchone()[0]
 
-    cursor.execute("""
+    cursor.execute(
+        """
         SELECT COUNT(*) FROM knowledgeBase
         WHERE due_date < ?
         AND status NOT IN ('Done', 'Closed')
-    """, (previous_end.strftime("%Y-%m-%d %H:%M:%S"),))
+    """,
+        (previous_end.strftime("%Y-%m-%d %H:%M:%S"),),
+    )
     prev_missed = cursor.fetchone()[0]
 
     conn.close()
 
     # SLA %
-    current_sla = round(((current_closed - current_missed) / current_closed) * 100, 2) if current_closed else 0
-    prev_sla = round(((prev_closed - prev_missed) / prev_closed) * 100, 2) if prev_closed else 0
+    current_sla = (
+        round(((current_closed - current_missed) / current_closed) * 100, 2)
+        if current_closed
+        else 0
+    )
+    prev_sla = (
+        round(((prev_closed - prev_missed) / prev_closed) * 100, 2)
+        if prev_closed
+        else 0
+    )
 
     # Labels
-    def fmt(d): return d.strftime("%d %b")
+    def fmt(d):
+        return d.strftime("%d %b")
 
     return {
         "current": {
@@ -363,21 +382,22 @@ def get_weekly_metrics():
             "closed": current_closed,
             "missed": current_missed,
             "sla": current_sla,
-            "label": f"{fmt(current_start)} - {fmt(today)}"
+            "label": f"{fmt(current_start)} - {fmt(today)}",
         },
         "previous": {
             "created": prev_created,
             "closed": prev_closed,
             "missed": prev_missed,
             "sla": prev_sla,
-            "label": f"{fmt(previous_start)} - {fmt(previous_end)}"
-        }
+            "label": f"{fmt(previous_start)} - {fmt(previous_end)}",
+        },
     }
 
 
-#==================== week on week trned code ends here =======================
+# ==================== week on week trned code ends here =======================
 
-#========================== trend stability indicator =================
+
+# ========================== trend stability indicator =================
 def get_weekly_trend(weekly_metrics):
     current = weekly_metrics["current"]
     previous = weekly_metrics["previous"]
@@ -393,16 +413,10 @@ def get_weekly_trend(weekly_metrics):
         return "➖ Stable"
 
 
+# ========================== trend stability code ends here ====================
 
 
-#========================== trend stability code ends here ====================
-
-
-
-#===================== SLA widget code ends here ========================
-
-
-#============ fetch priority wise distribution of the tickets============
+# ============ fetch priority wise distribution of the tickets============
 def get_priority_distribution():
     import sqlite3
 
@@ -419,12 +433,7 @@ def get_priority_distribution():
     data = cursor.fetchall()
     conn.close()
 
-    priority_counts = {
-        "P1": 0,
-        "P2": 0,
-        "P3": 0,
-        "P4": 0
-    }
+    priority_counts = {"P1": 0, "P2": 0, "P3": 0, "P4": 0}
 
     for priority, count in data:
         if priority in priority_counts:
@@ -433,15 +442,11 @@ def get_priority_distribution():
     return priority_counts
 
 
+# =================== pririoty fetching ends here=====================
 
 
+# ======= fucntion to get db last synced time==============
 
-
-#=================== pririoty fetching ends here=====================
-
-
-
-#======= fucntion to get db last synced time==============
 
 def get_last_synced_time():
     import sqlite3
@@ -461,17 +466,11 @@ def get_last_synced_time():
     return result[0] if result and result[0] else "Not Synced Yet"
 
 
+# =========== last sync function ends here ==============
 
 
-
-#=========== last sync function ends here ==============
-
-
-
-
-#========= Control tower code comes here ===================
+# ========= Control tower code comes here ===================
 def get_status_distribution():
-
 
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
@@ -486,11 +485,7 @@ def get_status_distribution():
     data = cursor.fetchall()
     conn.close()
 
-    status_counts = {
-        "Open": 0,
-        "In Progress": 0,
-        "Closed": 0
-    }
+    status_counts = {"Open": 0, "In Progress": 0, "Closed": 0}
 
     for status, count in data:
         normalized = status.lower()
@@ -505,13 +500,10 @@ def get_status_distribution():
     return status_counts
 
 
-
-#control tower code ends here============================
-
+# control tower code ends here============================
 
 
-
-#============== priority detemination starts ehre =====
+# ============== priority detemination starts ehre =====
 def calculate_priority(env, users, revenue, workaround, region):
 
     score = 0
@@ -546,7 +538,11 @@ def calculate_priority(env, users, revenue, workaround, region):
 
     # Final mapping
     # 🚨 LOW IMPACT OVERRIDE (NEW)
-    if revenue == "No" and workaround in ["Yes", "Partial"] and users in ["<10", "10-30"]:
+    if (
+        revenue == "No"
+        and workaround in ["Yes", "Partial"]
+        and users in ["<10", "10-30"]
+    ):
         priority = "P4"
 
     # NORMAL LOGIC
@@ -561,17 +557,20 @@ def calculate_priority(env, users, revenue, workaround, region):
 
     return priority, score
 
-#============== priority detemination ends ehre =====
 
-#======= SLA logic buikidng here============
+# ============== priority detemination ends ehre =====
+
+# ======= SLA logic buikidng here============
 from datetime import datetime, timedelta, timezone
-#from zoneinfo import ZoneInfo
+
+# from zoneinfo import ZoneInfo
+
 
 def calculate_due_date(priority):
 
-    #now = datetime.now()
-    #IST = pytz.timezone("Asia/Kolkata")
-    #now = datetime.now(IST)
+    # now = datetime.now()
+    # IST = pytz.timezone("Asia/Kolkata")
+    # now = datetime.now(IST)
     IST = timezone(timedelta(hours=5, minutes=30))
     now = datetime.now(IST)
 
@@ -586,9 +585,11 @@ def calculate_due_date(priority):
     else:
         return now + timedelta(days=2)
 
-#======== sla logic ends here =====================
 
-def send_telegram_alert(message,priority=None):
+# ======== sla logic ends here =====================
+
+
+def send_telegram_alert(message, priority=None):
     token = os.getenv("TELEGRAM_BOT_TOKEN")
     chat_id = os.getenv("TELEGRAM_CHAT_ID")
     if priority not in ["P1", "P2"]:
@@ -596,20 +597,16 @@ def send_telegram_alert(message,priority=None):
 
     url = f"https://api.telegram.org/bot{token}/sendMessage"
 
-    payload = {
-        "chat_id": chat_id,
-        "text": message
-    }
+    payload = {"chat_id": chat_id, "text": message}
     try:
         response = requests.post(url, data=payload)
     except Exception as e:
-        print("telegram err:",e)
+        print("telegram err:", e)
 
     print("Telegram response:", response.text)
 
 
-
-#=============== telegram confog ends==================
+# =============== telegram confog ends==================
 
 
 def categorize_incident(text):
@@ -621,13 +618,20 @@ def categorize_incident(text):
         return "Frontend"
 
     # Database
-    elif ("ora" in text or "sql" in text or "database" in text or
-          "db" in text or "query" in text or "data type" in text or "table" in text or "table" in text):
+    elif (
+        "ora" in text
+        or "sql" in text
+        or "database" in text
+        or "db" in text
+        or "query" in text
+        or "data type" in text
+        or "table" in text
+        or "table" in text
+    ):
         return "Database"
 
     # API / Gateway
-    elif ("api" in text or "gateway" in text or
-          ("timeout" in text and "api" in text)):
+    elif "api" in text or "gateway" in text or ("timeout" in text and "api" in text):
         return "API"
 
     # Batch
@@ -645,24 +649,26 @@ def categorize_incident(text):
     else:
         return "Unclassified"
 
-#def get_global_category_distribution():
-    #conn = sqlite3.connect(r"D:\pythonPractice\IntelliIQ.db")
-    #cursor = conn.cursor()
 
-    #cursor.execute("SELECT Incident FROM knowledgeBase")
-    #rows = cursor.fetchall()
-    #conn.close()
+# def get_global_category_distribution():
+# conn = sqlite3.connect(r"D:\pythonPractice\IntelliIQ.db")
+# cursor = conn.cursor()
 
-    #category_counts = {}
+# cursor.execute("SELECT Incident FROM knowledgeBase")
+# rows = cursor.fetchall()
+# conn.close()
 
-    #for row in rows:
-    #    incident_text = row[0]
-   #     category = categorize_incident(incident_text)
+# category_counts = {}
 
-  #      category_counts[category] = category_counts.get(category, 0) + 1
+# for row in rows:
+#    incident_text = row[0]
+#     category = categorize_incident(incident_text)
 
- #   return category_counts
+#      category_counts[category] = category_counts.get(category, 0) + 1
+
+#   return category_counts
 #
+
 
 def get_global_category_distribution():
     conn = sqlite3.connect(DB_NAME)
@@ -693,13 +699,14 @@ def get_global_category_distribution():
 
     return category_counts
 
-print("db path: ",os.path.abspath("IntelliIQ.db"))
+
+print("db path: ", os.path.abspath("IntelliIQ.db"))
 # ==========================================================
 # STEP 2: LOAD ENV VARIABLES
 # Purpose: Load API keys and configuration
 # ==========================================================
 
-#load_dotenv("mykeys.env")
+# load_dotenv("mykeys.env")
 load_dotenv()
 
 project_key = os.getenv("JIRA_PROJECT_KEY")
@@ -709,10 +716,7 @@ project_key = os.getenv("JIRA_PROJECT_KEY")
 # Purpose: Setup AI model for incident analysis
 # ==========================================================
 
-llm = ChatOpenAI(
-    api_key=os.getenv("OPENAI_API_KEY"),
-    model="gpt-4o-mini"
-)
+llm = ChatOpenAI(api_key=os.getenv("OPENAI_API_KEY"), model="gpt-4o-mini")
 
 # ==========================================================
 # STEP 4: PROMPT TEMPLATE + CHAIN
@@ -744,7 +748,7 @@ Rules:
 
 Incident:
 {incident}
-"""
+""",
 )
 
 chain = prompt | llm | StrOutputParser()
@@ -755,19 +759,134 @@ chain = prompt | llm | StrOutputParser()
 
 app = Flask(__name__)
 app.secret_key = "intelliiq_secret_key_123"
-#==== Registering the apps used ==================
+# ==== Registering the apps used ==================
 register_insurance_copilot(app, llm)
+register_project_health(app)
 
 register_ticket_dashboard(app)
 register_critical_metrics(app)
 register_system_advisor(app)
-register_operations_insights(app)
+
 register_help_page(app)
-register_process_doc(app,llm)
+register_process_doc(app, llm)
+register_analyst_intelligence(app, llm)
+register_analyst_detail(app, llm)
+
+# ====== Add all apps registered between these blocks
+
+# =================== route for opertions dashboard ================
 
 
-#====== Add all apps registered between these blocks
-#============ control tower route created below=============
+@app.route("/operations_dashboard")
+def operations_dashboard():
+
+    # INCIDENT DATA
+    incidents = get_all_incidents()
+    global_category_counts = get_global_category_distribution()
+    #top_performers = get_top_performers()
+    #analyst_performance = get_analyst_performance()
+    #analyst_insights = generate_analyst_insights()
+
+    valid_categories = {
+        k: v
+        for k, v in global_category_counts.items()
+        if k not in ["Unclassified", "Others", None, ""]
+    }
+
+    if valid_categories:
+        top_category = max(valid_categories, key=valid_categories.get)
+        top_count = valid_categories[top_category]
+        total = sum(valid_categories.values())
+        top_percentage = round((top_count / total) * 100)
+    else:
+        top_category = None
+        top_percentage = 0
+
+    # TICKET DATA
+    from early_warning_engine import get_early_warnings
+    from trend_engine import get_recurring_issues
+
+    early_warnings = get_early_warnings()
+    problem_tickets = get_recurring_issues()
+    tickets = get_all_tickets()
+
+    #============operations dashboard route ends=========================
+
+   
+    # ===== analyst risk aggregation (Phase 3 FIX - indentation corrected)=====
+
+
+    analyst_summary = {}
+
+    for t in tickets:
+
+        assignee = t.get("assignee") or "Unassigned"
+        print("ASSIGNEE:", t.get("assignee"))
+        risk = t.get("risk_level")
+
+        # moved inside loop (fix)
+        if assignee not in analyst_summary:
+            analyst_summary[assignee] = {"high": 0, "medium": 0, "total": 0}
+
+        if risk == "High":
+            analyst_summary[assignee]["high"] += 1
+
+        if risk == "Medium":
+            analyst_summary[assignee]["medium"] += 1
+
+        if risk in ["High", "Medium"]:
+            analyst_summary[assignee]["total"] += 1
+
+        # ==== analyst aggregation ends========
+
+    # ===== adding risk summary counts (operations dashboard fix)=====
+    summary = {"high": 0, "medium": 0, "safe": 0, "sla_met": 0, "sla_breached": 0}
+
+    for t in tickets:
+
+        risk = t.get("risk_level")
+        sla_met = t.get("sla_met")
+        status = (t.get("status") or "").lower()
+        sla_status = (t.get("sla_status") or "").lower()
+
+        if risk == "High":
+            summary["high"] += 1
+
+        if risk == "Medium":
+            summary["medium"] += 1
+
+        if risk == "Safe":
+            summary["safe"] += 1
+
+        if sla_met == "YES":
+            summary["sla_met"] += 1
+
+        if risk == "Closed Breached" or sla_status == "breached":
+            summary["sla_breached"] += 1
+
+    # ==== summary logic ends========
+
+    return render_template(
+        "operations_dashboard.html",
+        early_warnings=early_warnings,
+        problem_tickets=problem_tickets,
+        tickets=tickets,
+        summary=summary,
+        analyst_summary=analyst_summary,
+        #analyst_performance=analyst_performance,
+        #analyst_insights=analyst_insights,
+        global_category_counts=global_category_counts,
+        top_category=top_category,
+        top_percentage=top_percentage,
+        #top_performers=top_performers,
+        active_page="operations",
+    )
+
+
+# =================== operations DB route ends here===============
+
+
+# ============ control tower route created below=============
 @app.route("/control_tower")
 def control_tower():
     # Core widgets
@@ -800,22 +919,25 @@ def control_tower():
         weekly_trend=weekly_trend,
         last_synced=last_synced,
         sla_health=sla_health,
-        active_page="control"
+        active_page="control",
     )
-#============== route ends here ===============================
+
+
+# ============== route ends here ===============================
+
 
 # ==========================================================
 # GLOBAL TEMPLATE VARIABLES (AVAILABLE IN ALL HTML FILES)
 # ==========================================================
 @app.context_processor
 def inject_global_vars():
-    return dict(
-        app_owner="Parikshit"
-    )
+    return dict(app_owner="Parikshit")
+
 
 # ==========================================================
 # STEP 12: HOME ROUTE
 # ==========================================================
+
 
 @app.route("/")
 def home():
@@ -823,15 +945,12 @@ def home():
     return render_template("PC_IncidentAnalyser.html")
 
 
-
-
 from trend_engine import get_recurring_issues
 
+# print("RECURRING ISSUES:", get_recurring_issues())
 
+# =========================== incidnet explorer code here===============
 
-#print("RECURRING ISSUES:", get_recurring_issues())
-
-#=========================== incidnet explorer code here===============
 
 def get_all_incidents():
     conn = sqlite3.connect(DB_NAME)
@@ -845,7 +964,7 @@ def get_all_incidents():
 
     rows = cursor.fetchall()
 
-    processed_incidents = []   # ✅ initialize list
+    processed_incidents = []  # ✅ initialize list
 
     for r in rows:
         incident, category, ticket_id, date, normalized_incident = r
@@ -856,33 +975,36 @@ def get_all_incidents():
             if normalized_incident:
                 final_category = normalized_incident.replace("_", " ").title()
 
-        processed_incidents.append((
-            incident,
-            final_category,
-            ticket_id,
-            date
-        ))
+        processed_incidents.append((incident, final_category, ticket_id, date))
 
     conn.close()
 
-    return processed_incidents   # ✅ inside function
+    return processed_incidents  # ✅ inside function
 
 
+# ======================== incident explprer code ends here====================
 
 
-
-
-#======================== incident explprer code ends here====================
-
-#================= RCA prompt ======================
-def generate_rca(incident, ticket_id, impact, notes, status, team, fix_date, matches,resolution_notes):
+# ================= RCA prompt ======================
+def generate_rca(
+    incident,
+    ticket_id,
+    impact,
+    notes,
+    status,
+    team,
+    fix_date,
+    matches,
+    resolution_notes,
+):
     print("Generate RCA function invoked")
 
     # Prepare context
-    matches_context = "\n".join([
-        str(m[0]) if isinstance(m, tuple) else str(m)
-        for m in matches[:5]
-    ]) if matches else "No similar incidents found"
+    matches_context = (
+        "\n".join([str(m[0]) if isinstance(m, tuple) else str(m) for m in matches[:5]])
+        if matches
+        else "No similar incidents found"
+    )
 
     # RCA Prompt (JSON structured)
     prompt = f"""
@@ -944,6 +1066,7 @@ def generate_rca(incident, ticket_id, impact, notes, status, team, fix_date, mat
 
         # Convert JSON string → dict
         import json
+
         rca_output = json.loads(rca_text)
 
     except Exception as e:
@@ -958,17 +1081,16 @@ def generate_rca(incident, ticket_id, impact, notes, status, team, fix_date, mat
             "preventive_actions": "Monitor system",
             "status": status,
             "responsible_team": team,
-            "fix_date": fix_date
+            "fix_date": fix_date,
         }
 
     return rca_output
 
 
+# ================= RCA prompt ends here=====================
 
+# ============= get jira tickets for RCA===============
 
-#================= RCA prompt ends here=====================
-
-#============= get jira tickets for RCA===============
 
 def get_ticket_data():
     conn = sqlite3.connect(DB_NAME)
@@ -986,36 +1108,37 @@ def get_ticket_data():
 
     return rows
 
-#=============== code ends here==========================
+
+# =============== code ends here==========================
 
 
-#=========================== dashboard creation =====================
+# =========================== dashboard creation =====================
 @app.route("/dashboard")
 def dashboard():
 
-
-    #send_telegram_alert("🚀 IntelliIQ Test Alert: Telegram integration working!")
-    #global_category_counts = get_global_category_distribution()
-    #print("global_category_counts:", global_category_counts)
-    #print("DEBUG max value:", max(global_category_counts.values()))
+    # send_telegram_alert("🚀 IntelliIQ Test Alert: Telegram integration working!")
+    # global_category_counts = get_global_category_distribution()
+    # print("global_category_counts:", global_category_counts)
+    # print("DEBUG max value:", max(global_category_counts.values()))
 
     incidents = get_all_incidents()
-    #if global_category_counts:
-     #   top_category = max(global_category_counts, key=global_category_counts.get)
-      #  top_count = global_category_counts[top_category]
-       # total = sum(global_category_counts.values())
-        #top_percentage = round((top_count / total) * 100)
-    #else:
-     #   top_category = None
-      #  top_percentage = 0
+    # if global_category_counts:
+    #   top_category = max(global_category_counts, key=global_category_counts.get)
+    #  top_count = global_category_counts[top_category]
+    # total = sum(global_category_counts.values())
+    # top_percentage = round((top_count / total) * 100)
+    # else:
+    #   top_category = None
+    #  top_percentage = 0
 
-    #recommendation = "No recommendation available"
+    # recommendation = "No recommendation available"
 
     global_category_counts = get_global_category_distribution()
 
     # Remove weak categories
     valid_categories = {
-        k: v for k, v in global_category_counts.items()
+        k: v
+        for k, v in global_category_counts.items()
         if k not in ["Unclassified", "Others", None, ""]
     }
 
@@ -1035,7 +1158,9 @@ def dashboard():
 
     recommendation = "No recommendation available"
     if top_category == "Frontend":
-        recommendation = "Frontend issues dominate — review UI flows, API calls, and error handling"
+        recommendation = (
+            "Frontend issues dominate — review UI flows, API calls, and error handling"
+        )
 
     elif top_category == "Database":
         recommendation = "Database issues are frequent — check queries, indexing, and connection handling"
@@ -1044,10 +1169,14 @@ def dashboard():
         recommendation = "Review API configuration — check timeout settings, contact 3rd party provider"
 
     elif top_category == "Batch":
-        recommendation = "Batch job failures detected — review schedulers and job dependencies"
+        recommendation = (
+            "Batch job failures detected — review schedulers and job dependencies"
+        )
 
     elif top_category == "Infrastructure":
-        recommendation = "Infrastructure issues rising — monitor memory, CPU, and server health"
+        recommendation = (
+            "Infrastructure issues rising — monitor memory, CPU, and server health"
+        )
 
     else:
         recommendation = "Monitor incident trends for emerging patterns"
@@ -1057,15 +1186,10 @@ def dashboard():
         global_category_counts=global_category_counts,
         top_category=top_category,
         top_percentage=top_percentage,
-        recommendation = recommendation,
+        recommendation=recommendation,
         incidents=incidents,
-        active_page="dashboard"
-
-
+        active_page="dashboard",
     )
-
-
-
 
 
 # dashboard creaton ends here====================================
@@ -1074,17 +1198,19 @@ def dashboard():
 # STEP 13: ANALYZE INCIDENT
 # ==========================================================
 
+
 @app.route("/analyze", methods=["POST"])
 def analyze():
-    #print("Analyse function invoked")
+    # print("Analyse function invoked")
 
     decision = ""
     incident = request.form.get("incident", "").strip()
     from normalization_engine import normalize_incident
+
     normalized_incident = normalize_incident(incident)
 
     product = request.form.get("product")
-    #priority = request.form["priority"]
+    # priority = request.form["priority"]
     env = request.form.get("environment")
     users = request.form.get("users_impacted")
     region = request.form.get("region")
@@ -1093,7 +1219,6 @@ def analyze():
 
     print("RAW:", incident)
     print("NORMALIZED:", normalized_incident)
-
 
     priority, score = calculate_priority(env, users, revenue, workaround, region)
     # ===== PRIORITY REASONS =====
@@ -1141,13 +1266,25 @@ def analyze():
     if "batch" in incident_lower or "job" in incident_lower:
         issue_type = "batch"
 
-    elif "ui" in incident_lower or "frontend" in incident_lower or "screen" in incident_lower:
+    elif (
+        "ui" in incident_lower
+        or "frontend" in incident_lower
+        or "screen" in incident_lower
+    ):
         issue_type = "frontend"
 
-    elif "database" in incident_lower or "db" in incident_lower or "query" in incident_lower:
+    elif (
+        "database" in incident_lower
+        or "db" in incident_lower
+        or "query" in incident_lower
+    ):
         issue_type = "database"
 
-    elif "log" in incident_lower or "monitor" in incident_lower or "alert" in incident_lower:
+    elif (
+        "log" in incident_lower
+        or "monitor" in incident_lower
+        or "alert" in incident_lower
+    ):
         issue_type = "monitoring"
 
     # ==== product based search ends=======
@@ -1158,22 +1295,22 @@ def analyze():
     print("parikshit is working hard")
 
     # old SLA logic
-    #if priority == "High":
-     #   due_date = datetime.now() + timedelta(hours=4)
-    #elif priority == "Medium":
-     #   due_date = datetime.now() + timedelta(days=1)
-    #else:
-     #   due_date = datetime.now() + timedelta(days=3)
+    # if priority == "High":
+    #   due_date = datetime.now() + timedelta(hours=4)
+    # elif priority == "Medium":
+    #   due_date = datetime.now() + timedelta(days=1)
+    # else:
+    #   due_date = datetime.now() + timedelta(days=3)
     # ================ calling kb_engine========================================
 
-    #match, score, frequency, top_root_cause, matches = search_kb_new(incident)- commented this to replace the CSV with DB
-#============ db search code starts ===================
+    # match, score, frequency, top_root_cause, matches = search_kb_new(incident)- commented this to replace the CSV with DB
+    # ============ db search code starts ===================
     result = search_kb_new(incident)
 
     if result:
         match = result.get("match")
         if match:
-            existing_ticket=match.get("jira_ticket_id")
+            existing_ticket = match.get("jira_ticket_id")
         else:
             existing_ticket = None
 
@@ -1182,7 +1319,7 @@ def analyze():
         top_root_cause = result.get("top_root_cause", "")
         matches = result.get("matches", [])
 
-        #================ using thsi for genetting RCA output=============
+        # ================ using thsi for genetting RCA output=============
         # RCA inputs (for now use defaults — we’ll replace with form later)
         ticket_id = "AUTO-" + str(int(time.time()))
         impact = "To be provided"
@@ -1201,10 +1338,10 @@ def analyze():
             team,
             fix_date,
             matches,
-            resolution_notes
+            resolution_notes,
         )
 
-        #================== RCA generating ends here=======================
+        # ================== RCA generating ends here=======================
         # ===== CLUSTERING LOGIC START =====
         category_counts = {}
 
@@ -1224,9 +1361,9 @@ def analyze():
         top_root_cause = ""
         matches = []
         category_counts = {}
-#============== db search code ends===================
+    # ============== db search code ends===================
 
-# ===================Kb_engine call ends =======================================
+    # ===================Kb_engine call ends =======================================
 
     # ================= calling decision logic ==================
 
@@ -1234,12 +1371,13 @@ def analyze():
 
     # ================= end of decision logic ====================
 
-
     # ===================== calling trends engine===================
 
-    count_1d, count_3d, count_5d, count_7d, count_older, trend_message = calculate_trends(matches, frequency)
-   # print("DEBUG → count_1d:", count_1d)
-   # print("DEBUG → frequency:", frequency)
+    count_1d, count_3d, count_5d, count_7d, count_older, trend_message = (
+        calculate_trends(matches, frequency)
+    )
+    # print("DEBUG → count_1d:", count_1d)
+    # print("DEBUG → frequency:", frequency)
     # ===== TELEGRAM ALERT FOR SPIKE =====
 
     if count_1d >= 3 and count_1d >= 0.5 * frequency:
@@ -1255,23 +1393,21 @@ def analyze():
         Trend Insight: {trend_message}
         """
 
-        send_telegram_alert(alert_message,priority)
+        send_telegram_alert(alert_message, priority)
 
     # ==================== END TREND ENGINE =========================
-
 
     # ===== CALLING SUGGESTION ENGINE =========================
 
     suggestions = generate_suggestions(data, matches)
 
     # ==================END SUGGESTION ENGINE ===================
-    suggestions = enhance_with_domain(product,suggestions,incident)
+    suggestions = enhance_with_domain(product, suggestions, incident)
 
-# ===========troubleshooting suggestions code ends here=============
+    # ===========troubleshooting suggestions code ends here=============
 
-
-# print("Match keys:", matches[0].keys()
-# if matches else "No matches found")
+    # print("Match keys:", matches[0].keys()
+    # if matches else "No matches found")
 
     if frequency > 3:
         pattern_flag = "Recurring Issue"
@@ -1292,7 +1428,8 @@ def analyze():
     for m in matches:
         ticket_id = m[0][4]
 
-        if ticket_id: ticket_list.append(ticket_id)
+        if ticket_id:
+            ticket_list.append(ticket_id)
     global_category_counts = get_global_category_distribution()
     if global_category_counts:
         top_category = max(global_category_counts, key=global_category_counts.get)
@@ -1309,7 +1446,7 @@ def analyze():
     return render_template(
         "PC_IncidentAnalyser.html",
         data=data,
-        #due_date=due_date,
+        # due_date=due_date,
         sla_text=sla_text,
         due_date=due_date.strftime("%d %b %Y, %I:%M %p"),
         due_date_iso=due_date.isoformat(),
@@ -1337,15 +1474,14 @@ def analyze():
         global_category_counts=global_category_counts,
         top_category=top_category,
         top_percentage=top_percentage,
-        #rca_output=rca_output,
-        show_result= True,
-        active_page="home"
-
-
-
+        # rca_output=rca_output,
+        show_result=True,
+        active_page="home",
     )
 
-#==================== RCA generaor begins===============
+
+# ==================== RCA generaor begins===============
+
 
 @app.route("/rca", methods=["GET", "POST"])
 @app.route("/rca", methods=["GET", "POST"])
@@ -1365,38 +1501,28 @@ def rca_page():
         fix_date = request.form.get("fix_date")
 
         rca_output = generate_rca_simple(
-            incident,
-            ticket_id,
-            impact,
-            notes,
-            resolution_notes,
-            status,
-            team,
-            fix_date
+            incident, ticket_id, impact, notes, resolution_notes, status, team, fix_date
         )
 
-        return render_template(
-            "rca.html",
-            rca_output=rca_output,
-            tickets=tickets
-        )
+        return render_template("rca.html", rca_output=rca_output, tickets=tickets)
 
     return render_template(
-        "rca.html",
-        rca_output=None,
-        tickets=tickets,
-        active_page="rca"
+        "rca.html", rca_output=None, tickets=tickets, active_page="rca"
     )
 
-#rca generator code ends here===========================
+
+# rca generator code ends here===========================
 
 
 # ==========================================================
 # STEP 14: CREATE JIRA TICKET
 # ==========================================================
 
-#============= generating simple rca===================
-def generate_rca_simple(incident, ticket_id, impact, notes, resolution_notes, status, team, fix_date):
+
+# ============= generating simple rca===================
+def generate_rca_simple(
+    incident, ticket_id, impact, notes, resolution_notes, status, team, fix_date
+):
 
     prompt = f"""
     You are an expert support engineer.
@@ -1455,12 +1581,13 @@ def generate_rca_simple(incident, ticket_id, impact, notes, resolution_notes, st
             "preventive_actions": "Monitor system and logs",
             "status": status,
             "team": team,
-            "fix_date": fix_date
+            "fix_date": fix_date,
         }
 
     return rca_output
 
-#============= simple rca block ends =====================
+
+# ============= simple rca block ends =====================
 
 
 @app.route("/create_ticket", methods=["POST"])
@@ -1470,13 +1597,14 @@ def create_ticket():
 
     # this is old value summary = request.form["summary"]
 
-    #changed this on 17th april after indentifying duplication issue summary = request.form.get("summary")
+    # changed this on 17th april after indentifying duplication issue summary = request.form.get("summary")
     incident = request.form.get("incident")
     from normalization_engine import normalize_incident
+
     normalized_incident = normalize_incident(incident)
 
     summary = incident
-    #changes above are for 17th april code
+    # changes above are for 17th april code
     impact = request.form["impact"]
     root_cause = request.form["root_cause"]
     recommendations = request.form["recommendations"]
@@ -1485,37 +1613,35 @@ def create_ticket():
     from datetime import datetime, timedelta
 
     # Always define due_date BEFORE using it
-    #priority = request.form.get("priority")
+    # priority = request.form.get("priority")
     # ==== new columns added to the database
     env = request.form.get("environment")
     users = request.form.get("users_impacted")
     region = request.form.get("region_impacted")
     revenue = request.form.get("revenue_impact")
     workaround = request.form.get("workaround")
-   # priority, _ = calculate_priority(env, users, revenue, workaround, region)
-   # due_date = calculate_due_date(priority)
+    # priority, _ = calculate_priority(env, users, revenue, workaround, region)
+    # due_date = calculate_due_date(priority)
     priority = request.form.get("priority")
     due_date = request.form.get("due_date")
 
-
-    #== new columns end here
+    # == new columns end here
     description = f"""
     Impact: {impact}
     Root Cause: {root_cause}
     Recommendations: {recommendations}
     """
 
-    #ticket_key = create_jira_ticket(summary, description, due_date)
+    # ticket_key = create_jira_ticket(summary, description, due_date)
     from datetime import datetime
 
     parsed_date = datetime.fromisoformat(due_date)
     jira_due_date = parsed_date.strftime("%Y-%m-%d")
 
     ticket_key = create_jira_ticket(summary, description, jira_due_date)
-    #=================== push rca to confluence=================
+    # =================== push rca to confluence=================
 
-
-    #================ rca to confluence ends ======================
+    # ================ rca to confluence ends ======================
 
     # ===== TELEGRAM ALERT FOR TICKET CREATION =====
 
@@ -1534,9 +1660,9 @@ def create_ticket():
     from datetime import datetime, timedelta
 
     # Basic SLA logic (can refine later)
-   # due_date = datetime.now() + timedelta(days=2)
+    # due_date = datetime.now() + timedelta(days=2)
 
-    send_telegram_alert(alert_message,priority)
+    send_telegram_alert(alert_message, priority)
 
     ticket_link = f"{os.getenv('JIRA_URL')}/browse/{ticket_key}"
     jira_ticket_id = ticket_link.split("/")[-1]
@@ -1547,14 +1673,14 @@ def create_ticket():
     # updating the csv file with the new ticekt details
     # =====================================================
 
-    #import csv
-    #from datetime import datetime
+    # import csv
+    # from datetime import datetime
 
-    #now = datetime.now()
-    #date = now.strftime("%Y-%m-%d")
-    #time = now.strftime("%H:%M:%S")
+    # now = datetime.now()
+    # date = now.strftime("%Y-%m-%d")
+    # time = now.strftime("%H:%M:%S")
 
-    #incident = request.form.get("incident")
+    # incident = request.form.get("incident")
     solution = request.form.get("recommendations")
     root_cause = request.form.get("root_cause")
 
@@ -1565,7 +1691,7 @@ def create_ticket():
     cursor = conn.cursor()
 
     cursor.execute("select name from sqlite_master where type='table';")
-    #print("tables: ",cursor.fetchall())
+    # print("tables: ",cursor.fetchall())
 
     category = categorize_incident(incident)
 
@@ -1587,34 +1713,33 @@ def create_ticket():
     except:
         due_date_db = due_date  # fallback safety
 
-
-
-
-    cursor.execute("""
+    cursor.execute(
+        """
                    INSERT INTO knowledgeBase (incident, solution, root_cause, category, date, time, keywords,
                                               jira_ticket_id,
                                               priority, due_date, environment, users_impacted, region, revenue_impact,
                                               workaround,normalized_incident)
                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                   """, (
-                       incident,
-                       solution,
-                       root_cause,
-                       category,
-                       date,
-                       time,
-                       keywords,
-                       jira_ticket_id,
-                       priority,
-                       due_date_db,
-                       env,
-                       users,
-                       region,
-                       revenue,
-                       workaround,
-                       normalized_incident
-
-                   ))
+                   """,
+        (
+            incident,
+            solution,
+            root_cause,
+            category,
+            date,
+            time,
+            keywords,
+            jira_ticket_id,
+            priority,
+            due_date_db,
+            env,
+            users,
+            region,
+            revenue,
+            workaround,
+            normalized_incident,
+        ),
+    )
 
     conn.commit()
     conn.close()
@@ -1625,33 +1750,38 @@ def create_ticket():
         summary=summary,
         impact=impact,
         root_cause=root_cause,
-        recommendations=recommendations
+        recommendations=recommendations,
     )
 
-#============== update RCA to confluence===================
+
+# ============== update RCA to confluence===================
+
 
 @app.route("/push_rca_confluence", methods=["POST"])
 def push_rca_confluence():
 
     ticket_id = request.form.get("ticket_id")
-    #incident = request.form.get("incident") changes done on 17th april to fix the duplicate title issue below code
+    # incident = request.form.get("incident") changes done on 17th april to fix the duplicate title issue below code
     ticket_id = request.form.get("ticket_id")
 
     # 🔥 Fetch incident from DB (single source of truth)
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
 
-    cursor.execute("""
+    cursor.execute(
+        """
                    SELECT Incident
                    FROM Knowledgebase
                    WHERE Jira_Ticket_Id = ?
-                   """, (ticket_id,))
+                   """,
+        (ticket_id,),
+    )
 
     row = cursor.fetchone()
     conn.close()
 
     incident = row[0] if row else "Unknown Incident"
-    #17th april code change complete
+    # 17th april code change complete
     rca_output = request.form.get("rca_output")
 
     # ✅ Convert JSON string → dict
@@ -1678,11 +1808,7 @@ Fix Date: {rca_data.get("fix_date", "")}
 
     # ✅ Send clean structured text (NOT HTML)
     page_link = create_confluence_page(
-        incident,
-        "RCA Generated via IntelliIQ",
-        content,
-        "",
-        ticket_id
+        incident, "RCA Generated via IntelliIQ", content, "", ticket_id
     )
 
     add_jira_comment(ticket_id, page_link)
@@ -1692,16 +1818,17 @@ Fix Date: {rca_data.get("fix_date", "")}
         success_message="RCA pushed to Confluence successfully!",
         page_link=page_link,
         rca_output=rca_data,
-        ticket_data=get_ticket_data()
+        ticket_data=get_ticket_data(),
     )
 
 
-#================= rca confluence update ends here================
+# ================= rca confluence update ends here================
 
 
 # ==========================================================
 # STEP 15: CREATE CONFLUENCE PAGE
 # ==========================================================
+
 
 @app.route("/create_confluence", methods=["POST"])
 def create_confluence():
@@ -1732,11 +1859,7 @@ def create_confluence():
     jira_key = ticket_link.split("/")[-1]
 
     page_link = create_confluence_page(
-        incident,
-        impact,
-        root_cause,
-        recommendations,
-        jira_key
+        incident, impact, root_cause, recommendations, jira_key
     )
 
     add_jira_comment(jira_key, page_link)
@@ -1745,18 +1868,22 @@ def create_confluence():
         "PC_IncidentAnalyser.html",
         confluence_link=page_link,
         ticket_link=ticket_link,
-        #rca_output=rca_output,
-
+        # rca_output=rca_output,
         # matches=matches,
         # ticket_list=ticket_list
-
     )
 
+#===== performance snapshot trigger (manual - correct placement)=====
+@app.route("/run_performance_snapshot")
+def run_performance_snapshot():
 
+    try:
+        generate_performance_snapshot()
+        return "✅ Performance snapshot generated successfully"
 
-
-
-
+    except Exception as e:
+        return f"❌ Error: {str(e)}"
+#==== snapshot trigger ends========
 
 # ==========================================================
 # STEP 16: RUN APP
@@ -1764,5 +1891,5 @@ def create_confluence():
 
 
 if __name__ == "__main__":
-      port = int(os.environ.get("PORT", 10000))
-      app.run(host="0.0.0.0", port=port)
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)

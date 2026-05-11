@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="card">
+    <h3>📊 Overall SLA Overview</h3>
+
+    <p><b>Total Tickets:</b> {{ overall.total }}</p>
+    <p><b>Closed:</b> {{ overall.closed }} | <b>Open:</b> {{ overall.open }}</p>
+
+    <hr>
+
+    <p><b>Closed SLA %:</b> {{ overall.closed_sla }}%</p>
+    <p><b>Open Breached:</b> {{ overall.open_breached }} / {{ overall.open }}</p>
+
+    <hr>
+
+    <p><b>Overall Breach Rate:</b> {{ overall.breach_rate }}%</p>
+</div>
+
+<h2>🧠 Analyst Intelligence</h2>
+
+<div class="card">
+    <h3>📊 Analyst Scorecard</h3>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Analyst</th>
+                <th>Total</th>
+                <th>Closed</th>
+                <th>Open</th>
+                <th>Closed SLA %</th>
+                <th>Closed Breach</th>
+                <th>Open Breach</th>
+                <th>At Risk</th>
+                <th>Avg Ticket Age (Days)</th>
+                <th>Health</th>
+                <th>Focus</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for m in metrics %}
+            <tr class="
+                {% if 'Critical' in m.health %}row-critical
+                {% elif 'Moderate' in m.health %}row-moderate
+                {% else %}row-good
+                {% endif %}
+            ">
+                <td>
+                    <a href="/analyst/{{ m.analyst | urlencode }}" class="analyst-link" title="View Analyst Details">
+                        {{ m.analyst }}
+                    </a>
+                </td>
+                <td>{{ m.total }}</td>
+                <td>{{ m.closed }}</td>
+                <td>{{ m.open }}</td>
+                <td>{{ m.sla_percent }}%</td>
+                <td>{{ m.closed_breach }}</td>
+                <td>{{ m.open_breach }}</td>
+                <td>{{ m.at_risk }}</td>
+                <td>{{ m.avg_resolution }}</td>
+                <td>{{ m.health }}</td>
+                <td>{{ m.focus }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+<!-- ================= TOP PERFORMERS ================= -->
+<div class="card">
+    <h3>🏆 Top Performers</h3>
+
+    <!-- WEEKLY -->
+    <h4>Weekly</h4>
+    {% if top_performers.weekly %}
+    <table>
+        <tr>
+            <th>Analyst</th>
+            <th>Resolved</th>
+            <th>SLA Met</th>
+            <th>SLA %</th>
+        </tr>
+        {% for a in top_performers.weekly %}
+        <tr>
+            <td>{{ a.name }}</td>
+            <td>{{ a.resolved }}</td>
+            <td>{{ a.sla_met }}</td>
+            <td>{{ a.sla_percent }}%</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+    <p>No one met the qualifying criteria</p>
+    {% endif %}
+
+    <!-- MONTHLY -->
+    <h4>Monthly</h4>
+    {% if top_performers.monthly %}
+    <table>
+        <tr>
+            <th>Analyst</th>
+            <th>Resolved</th>
+            <th>SLA Met</th>
+            <th>SLA %</th>
+        </tr>
+        {% for a in top_performers.monthly %}
+        <tr>
+            <td>{{ a.name }}</td>
+            <td>{{ a.resolved }}</td>
+            <td>{{ a.sla_met }}</td>
+            <td>{{ a.sla_percent }}%</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+    <p>No one met the qualifying criteria</p>
+    {% endif %}
+
+    <!-- QUARTERLY -->
+    <h4>Quarterly</h4>
+    {% if top_performers.quarterly %}
+    <table>
+        <tr>
+            <th>Analyst</th>
+            <th>Resolved</th>
+            <th>SLA Met</th>
+            <th>SLA %</th>
+        </tr>
+        {% for a in top_performers.quarterly %}
+        <tr>
+            <td>{{ a.name }}</td>
+            <td>{{ a.resolved }}</td>
+            <td>{{ a.sla_met }}</td>
+            <td>{{ a.sla_percent }}%</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+    <p>No one met the qualifying criteria</p>
+    {% endif %}
+
+</div>
+<!-- ================= ANALYST INSIGHTS ================= -->
+<div class="card">
+    <h3>🧠 Analyst Insights</h3>
+
+    {% if analyst_insights %}
+    <ul>
+        {% for insight in analyst_insights %}
+        <li>{{ insight }}</li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p>No insights available</p>
+    {% endif %}
+</div>
+<!-- ============= Analyst Insights END ====================-->
+<!-- ================= ANALYST PERFORMANCE ================= -->
+<div class="card">
+    <h3>📊 Analyst Performance (All)</h3>
+
+    <!-- WEEKLY -->
+    <h4>Weekly</h4>
+    {% if analyst_performance.weekly %}
+    <table>
+        <tr>
+            <th>Analyst</th>
+            <th>Resolved</th>
+            <th>SLA Met</th>
+            <th>SLA %</th>
+        </tr>
+        {% for a in analyst_performance.weekly %}
+        <tr>
+            <td>{{ a.name }}</td>
+            <td>{{ a.resolved }}</td>
+            <td>{{ a.sla_met }}</td>
+            <td>{{ a.sla_percent }}%</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+    <p>No data available</p>
+    {% endif %}
+
+    <!-- MONTHLY -->
+    <h4>Monthly</h4>
+    {% if analyst_performance.monthly %}
+    <table>
+        <tr>
+            <th>Analyst</th>
+            <th>Resolved</th>
+            <th>SLA Met</th>
+            <th>SLA %</th>
+        </tr>
+        {% for a in analyst_performance.monthly %}
+        <tr>
+            <td>{{ a.name }}</td>
+            <td>{{ a.resolved }}</td>
+            <td>{{ a.sla_met }}</td>
+            <td>{{ a.sla_percent }}%</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+    <p>No data available</p>
+    {% endif %}
+
+    <!-- QUARTERLY -->
+    <h4>Quarterly</h4>
+    {% if analyst_performance.quarterly %}
+    <table>
+        <tr>
+            <th>Analyst</th>
+            <th>Resolved</th>
+            <th>SLA Met</th>
+            <th>SLA %</th>
+        </tr>
+        {% for a in analyst_performance.quarterly %}
+        <tr>
+            <td>{{ a.name }}</td>
+            <td>{{ a.resolved }}</td>
+            <td>{{ a.sla_met }}</td>
+            <td>{{ a.sla_percent }}%</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+    <p>No data available</p>
+    {% endif %}
+</div>
+<!-- ================= ANALYST PERFORMANCE Ends Here================= -->
+
+<div class="card">
+    <h3>🤖 AI Insights</h3>
+
+    {% for i in insights %}
+        <p><b>{{ i.analyst }}:</b> {{ i.summary }}</p>
+    {% endfor %}
+</div>
+
+{% endblock %}

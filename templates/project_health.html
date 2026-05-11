@@ -1,0 +1,823 @@
+{% extends "base.html" %}
+
+{% block title %}Project Health{% endblock %}
+
+{% block content %}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+
+canvas {
+    max-height: 280px !important;
+}
+
+.chart-container {
+    height: 300px;
+    margin-top: 20px;
+}
+
+</style>
+
+<h2>📊 Project Health Dashboard</h2>
+
+
+<!-- ====================================================== -->
+<!-- SECTION 1 -->
+<!-- ====================================================== -->
+
+<div class="row">
+
+    <div class="card">
+        <div class="subtle">Total Tickets</div>
+        <div class="kpi">{{ overall.total }}</div>
+    </div>
+
+    <div class="card">
+        <div class="subtle">SLA %</div>
+        <div class="kpi">{{ overall.sla_pct }}%</div>
+    </div>
+
+    <div class="card">
+        <div class="subtle">Breached</div>
+        <div class="kpi">{{ overall.breached }}</div>
+    </div>
+
+    <div class="card">
+        <div class="subtle">Average Days Open</div>
+        <div class="kpi">{{ overall.avg_days }}</div>
+    </div>
+
+</div>
+
+
+<!-- ====================================================== -->
+<!-- SECTION 2 -->
+<!-- ====================================================== -->
+
+<div class="row">
+
+    <div class="card">
+
+        <h3>📂 Open Ticket Distribution</h3>
+
+        <p>Open Tickets: {{ overall.open_count }}</p>
+        <p>In Progress: {{ overall.inprogress_count }}</p>
+        <p>To Do: {{ overall.todo_count }}</p>
+
+    </div>
+
+
+    <div class="card">
+
+        <h3>⚡ Monthly Priority Trend</h3>
+
+        <div class="chart-container">
+            <canvas id="priorityTrendChart"></canvas>
+        </div>
+
+        <hr>
+
+        <p>
+            💰 Revenue Impacting:
+            {{ overall.revenue_count }}
+        </p>
+
+    </div>
+
+</div>
+
+
+<!-- ====================================================== -->
+<!-- SECTION 3.1 -->
+<!-- ====================================================== -->
+
+<div class="card">
+
+    <h3>📈 Current Week Trend</h3>
+
+    <div class="row">
+
+        <div class="small-card">
+            <strong>Opened</strong>
+            <div class="metric">
+                {{ current_week.opened }}
+            </div>
+        </div>
+
+        <div class="small-card">
+            <strong>Closed</strong>
+            <div class="metric">
+                {{ current_week.closed }}
+            </div>
+        </div>
+
+        <div class="small-card">
+            <strong>Breached</strong>
+            <div class="metric">
+                {{ current_week.breached }}
+            </div>
+        </div>
+
+        <div class="small-card">
+            <strong>SLA %</strong>
+            <div class="metric">
+                {{ current_week.sla_pct }}%
+            </div>
+        </div>
+
+        <div class="small-card">
+            <strong>MTTR Improvement</strong>
+            <div class="metric">
+                {{ current_week.mttr_improvement }}%
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- ====================================================== -->
+<!-- WEEKLY TREND -->
+<!-- ====================================================== -->
+
+<div class="card">
+
+    <h3>📅 Weekly Performance Trend</h3>
+
+    <p>
+        <strong>Status:</strong>
+        {{ weekly_trend }}
+    </p>
+
+    <div class="chart-container">
+        <canvas id="weeklyChart"></canvas>
+    </div>
+
+    <table>
+
+        <tr>
+            <th>Week</th>
+            <th>Opened</th>
+            <th>Closed</th>
+            <th>Breached</th>
+            <th>SLA %</th>
+            <th>MTTR Improvement</th>
+            <th>Closure Efficiency</th>
+        </tr>
+
+        {% for w in weekly %}
+
+        <tr>
+
+            <td>{{ w.label }}</td>
+            <td>{{ w.opened }}</td>
+            <td>{{ w.closed }}</td>
+            <td>{{ w.breached }}</td>
+            <td>{{ w.sla_pct }}%</td>
+            <td>{{ w.mttr_improvement }}%</td>
+            <td>{{ w.closure_efficiency }}%</td>
+
+        </tr>
+
+        {% endfor %}
+
+    </table>
+
+</div>
+
+
+<!-- ====================================================== -->
+<!-- MONTHLY TREND -->
+<!-- ====================================================== -->
+
+<div class="card">
+
+    <h3>🗓 Monthly Performance Trend</h3>
+
+    <p>
+        <strong>Status:</strong>
+        {{ monthly_trend }}
+    </p>
+
+    <div class="chart-container">
+        <canvas id="monthlyChart"></canvas>
+    </div>
+
+    <table>
+
+        <tr>
+            <th>Month</th>
+            <th>Opened</th>
+            <th>Closed</th>
+            <th>Breached</th>
+            <th>SLA %</th>
+            <th>MTTR Improvement</th>
+            <th>Closure Efficiency</th>
+        </tr>
+
+        {% for m in monthly %}
+
+        <tr>
+
+            <td>{{ m.label }}</td>
+            <td>{{ m.opened }}</td>
+            <td>{{ m.closed }}</td>
+            <td>{{ m.breached }}</td>
+            <td>{{ m.sla_pct }}%</td>
+            <td>{{ m.mttr_improvement }}%</td>
+            <td>{{ m.closure_efficiency }}%</td>
+
+        </tr>
+
+        {% endfor %}
+
+    </table>
+
+</div>
+
+
+<!-- ====================================================== -->
+<!-- QUARTERLY TREND -->
+<!-- ====================================================== -->
+
+<div class="card">
+
+    <h3>📊 Quarterly Performance Trend</h3>
+
+    <p>
+        <strong>Status:</strong>
+        {{ quarterly_trend }}
+    </p>
+
+    <div class="chart-container">
+        <canvas id="quarterlyChart"></canvas>
+    </div>
+
+    <table>
+
+        <tr>
+            <th>Quarter</th>
+            <th>Opened</th>
+            <th>Closed</th>
+            <th>Breached</th>
+            <th>SLA %</th>
+            <th>MTTR Improvement</th>
+            <th>Closure Efficiency</th>
+        </tr>
+
+        {% for q in quarterly %}
+
+        <tr>
+
+            <td>{{ q.label }}</td>
+            <td>{{ q.opened }}</td>
+            <td>{{ q.closed }}</td>
+            <td>{{ q.breached }}</td>
+            <td>{{ q.sla_pct }}%</td>
+            <td>{{ q.mttr_improvement }}%</td>
+            <td>{{ q.closure_efficiency }}%</td>
+
+        </tr>
+
+        {% endfor %}
+
+    </table>
+
+</div>
+
+
+<!-- ====================================================== -->
+<!-- SECTION 4 -->
+<!-- ====================================================== -->
+
+<div class="row">
+
+    <div class="card">
+
+        <h3>🏆 Weekly Top Analysts</h3>
+
+        {% if top_analysts.week %}
+
+            <ul>
+
+            {% for a in top_analysts.week %}
+
+                <li>
+                    {{ a[0] }} — {{ a[1] }}
+                </li>
+
+            {% endfor %}
+
+            </ul>
+
+        {% else %}
+
+            <p>No data available.</p>
+
+        {% endif %}
+
+    </div>
+
+
+    <div class="card">
+
+        <h3>🏆 Monthly Top Analysts</h3>
+
+        {% if top_analysts.month %}
+
+            <ul>
+
+            {% for a in top_analysts.month %}
+
+                <li>
+                    {{ a[0] }} — {{ a[1] }}
+                </li>
+
+            {% endfor %}
+
+            </ul>
+
+        {% else %}
+
+            <p>No data available.</p>
+
+        {% endif %}
+
+    </div>
+
+
+    <div class="card">
+
+        <h3>🏆 Quarterly Top Analysts</h3>
+
+        {% if top_analysts.quarter %}
+
+            <ul>
+
+            {% for a in top_analysts.quarter %}
+
+                <li>
+                    {{ a[0] }} — {{ a[1] }}
+                </li>
+
+            {% endfor %}
+
+            </ul>
+
+        {% else %}
+
+            <p>No data available.</p>
+
+        {% endif %}
+
+    </div>
+
+</div>
+
+
+<!-- ====================================================== -->
+<!-- SECTION 5 -->
+<!-- ====================================================== -->
+
+<div class="row">
+
+    <div class="card">
+
+        <h3>🚨 Open Risks</h3>
+
+        {% if risks %}
+
+            <ul>
+
+                {% for r in risks %}
+
+                    <li>
+                        {{ r[0].replace('_',' ').title() }}
+                        — {{ r[1] }}
+                    </li>
+
+                {% endfor %}
+
+            </ul>
+
+        {% else %}
+
+            <p>No major risks identified.</p>
+
+        {% endif %}
+
+    </div>
+
+
+    <div class="card">
+
+        <h3>⏳ Aging Tickets</h3>
+
+        {% if aging %}
+
+            <ul>
+
+                {% for a in aging %}
+
+                    <li>
+                        {{ a.incident }}
+                        ({{ a.priority }})
+                        — {{ a.age }} days
+                    </li>
+
+                {% endfor %}
+
+            </ul>
+
+        {% else %}
+
+            <p>No aging tickets.</p>
+
+        {% endif %}
+
+    </div>
+
+</div>
+
+
+<!-- ====================================================== -->
+<!-- CATEGORY INSIGHTS -->
+<!-- ====================================================== -->
+
+<div class="card">
+
+    <h3>📌 Category Intelligence</h3>
+
+    {% if category_insights.best %}
+
+        <p>
+            ✅ Most Stable:
+            {{ category_insights.best[0] }}
+            ({{ category_insights.best[1] }}% SLA)
+        </p>
+
+    {% endif %}
+
+    {% if category_insights.worst %}
+
+        <p>
+            ⚠ Most Problematic:
+            {{ category_insights.worst[0] }}
+            ({{ category_insights.worst[1] }}% SLA)
+        </p>
+
+    {% endif %}
+
+</div>
+
+
+<!-- ====================================================== -->
+<!-- SECTION 6 -->
+<!-- ====================================================== -->
+
+<div class="row">
+
+    <div class="card">
+
+        <h3>🔥 Weekly Highlights</h3>
+
+        {% if highlights.week %}
+
+            <ul>
+
+                {% for h in highlights.week %}
+
+                    <li>
+                        {{ h[0].replace('_',' ').title() }}
+                        — {{ h[1] }}
+                    </li>
+
+                {% endfor %}
+
+            </ul>
+
+        {% else %}
+
+            <p>No data available.</p>
+
+        {% endif %}
+
+    </div>
+
+
+    <div class="card">
+
+        <h3>🔥 Monthly Highlights</h3>
+
+        {% if highlights.month %}
+
+            <ul>
+
+                {% for h in highlights.month %}
+
+                    <li>
+                        {{ h[0].replace('_',' ').title() }}
+                        — {{ h[1] }}
+                    </li>
+
+                {% endfor %}
+
+            </ul>
+
+        {% else %}
+
+            <p>No data available.</p>
+
+        {% endif %}
+
+    </div>
+
+
+    <div class="card">
+
+        <h3>🔥 Quarterly Highlights</h3>
+
+        {% if highlights.quarter %}
+
+            <ul>
+
+                {% for h in highlights.quarter %}
+
+                    <li>
+                        {{ h[0].replace('_',' ').title() }}
+                        — {{ h[1] }}
+                    </li>
+
+                {% endfor %}
+
+            </ul>
+
+        {% else %}
+
+            <p>No data available.</p>
+
+        {% endif %}
+
+    </div>
+
+</div>
+
+
+<!-- ====================================================== -->
+<!-- CHARTS -->
+<!-- ====================================================== -->
+
+<script>
+
+const priorityLabels = [
+    {% for p in priority_trends %}
+        "{{ p.label }}",
+    {% endfor %}
+];
+
+const p1Data = [
+    {% for p in priority_trends %}
+        {{ p.p1 }},
+    {% endfor %}
+];
+
+const p2Data = [
+    {% for p in priority_trends %}
+        {{ p.p2 }},
+    {% endfor %}
+];
+
+const p3Data = [
+    {% for p in priority_trends %}
+        {{ p.p3 }},
+    {% endfor %}
+];
+
+const p4Data = [
+    {% for p in priority_trends %}
+        {{ p.p4 }},
+    {% endfor %}
+];
+
+const revenueData = [
+    {% for p in priority_trends %}
+        {{ p.revenue }},
+    {% endfor %}
+];
+
+new Chart(document.getElementById('priorityTrendChart'), {
+
+    type: 'bar',
+
+    data: {
+
+        labels: priorityLabels,
+
+        datasets: [
+
+            {
+                label: 'P1',
+                data: p1Data
+            },
+
+            {
+                label: 'P2',
+                data: p2Data
+            },
+
+            {
+                label: 'P3',
+                data: p3Data
+            },
+
+            {
+                label: 'P4',
+                data: p4Data
+            },
+
+            {
+                label: 'Revenue Impacting',
+                data: revenueData
+            }
+
+        ]
+    },
+
+    options: {
+
+        responsive: true,
+        maintainAspectRatio: false
+
+    }
+
+});
+
+
+const weeklyLabels = [
+    {% for w in weekly %}
+        "{{ w.label }}",
+    {% endfor %}
+];
+
+const weeklyOpened = [
+    {% for w in weekly %}
+        {{ w.opened }},
+    {% endfor %}
+];
+
+const weeklyClosed = [
+    {% for w in weekly %}
+        {{ w.closed }},
+    {% endfor %}
+];
+
+const weeklyBreached = [
+    {% for w in weekly %}
+        {{ w.breached }},
+    {% endfor %}
+];
+
+new Chart(document.getElementById('weeklyChart'), {
+
+    type: 'line',
+
+    data: {
+
+        labels: weeklyLabels,
+
+        datasets: [
+
+            {
+                label: 'Opened',
+                data: weeklyOpened
+            },
+
+            {
+                label: 'Closed',
+                data: weeklyClosed
+            },
+
+            {
+                label: 'Breached',
+                data: weeklyBreached
+            }
+
+        ]
+    },
+
+    options: {
+
+        responsive: true,
+        maintainAspectRatio: false
+
+    }
+
+});
+
+
+const monthlyLabels = [
+    {% for m in monthly %}
+        "{{ m.label }}",
+    {% endfor %}
+];
+
+const monthlyOpened = [
+    {% for m in monthly %}
+        {{ m.opened }},
+    {% endfor %}
+];
+
+const monthlyClosed = [
+    {% for m in monthly %}
+        {{ m.closed }},
+    {% endfor %}
+];
+
+new Chart(document.getElementById('monthlyChart'), {
+
+    type: 'bar',
+
+    data: {
+
+        labels: monthlyLabels,
+
+        datasets: [
+
+            {
+                label: 'Opened',
+                data: monthlyOpened
+            },
+
+            {
+                label: 'Closed',
+                data: monthlyClosed
+            }
+
+        ]
+    },
+
+    options: {
+
+        responsive: true,
+        maintainAspectRatio: false
+
+    }
+
+});
+
+
+const quarterlyLabels = [
+    {% for q in quarterly %}
+        "{{ q.label }}",
+    {% endfor %}
+];
+
+const quarterlySLA = [
+    {% for q in quarterly %}
+        {{ q.sla_pct }},
+    {% endfor %}
+];
+
+const quarterlyMTTR = [
+    {% for q in quarterly %}
+        {{ q.mttr_improvement }},
+    {% endfor %}
+];
+
+new Chart(document.getElementById('quarterlyChart'), {
+
+    type: 'line',
+
+    data: {
+
+        labels: quarterlyLabels,
+
+        datasets: [
+
+            {
+                label: 'SLA %',
+                data: quarterlySLA
+            },
+
+            {
+                label: 'MTTR Improvement',
+                data: quarterlyMTTR
+            }
+
+        ]
+    },
+
+    options: {
+
+        responsive: true,
+        maintainAspectRatio: false
+
+    }
+
+});
+
+</script>
+
+{% endblock %}

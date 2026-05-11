@@ -17,8 +17,23 @@ from flask import render_template, request
 import markdown
 
 from dotenv import load_dotenv
+
+#commenting the below on 11 may load_dotenv(mykeys.env) to test dynamic loading==============
+
 #load_dotenv("mykeys.env")
-load_dotenv()
+#============== commenting ends here===============================
+
+#=============== below is the new code on 11 may===============
+
+env=os.getenv("ENV","local")
+if env=="local" :
+    load_dotenv("mykeys.env")
+    
+else:
+    load_dotenv()    
+#load_dotenv()
+
+#============= 11 may code ends========================
 
 from langchain_openai import ChatOpenAI
 
