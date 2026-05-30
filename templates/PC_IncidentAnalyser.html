@@ -9,7 +9,7 @@
 
 <!-- ================= INPUT FORM ================= -->
 <div class="card">
-    <form action="/analyze" method="POST">
+    <form action="/analyze" method="POST" enctype="multipart/form-data">
 
         <label>Incident Description</label>
         <textarea name="incident" placeholder="Example: Ajax error on claims page..." required></textarea>
@@ -58,21 +58,128 @@
             <option value="Partial">Partial</option>
         </select>
 
+      
+
         <button class="btn-primary" type="submit">🔍 Analyze</button>
 
     </form>
 </div>
 
 <!-- ================= RESULTS ================= -->
+ 
 
-{% if data or ticket_link or confluence_link %}
+{% if data or ticket_link or confluence_link or historical_rca_found %}
 
 <p class="subtle"><strong>📊 Analysis & Actions</strong></p>
+<!-- ================= HISTORICAL RCA ================= -->
+
+{% if historical_rca_found and historical_rca %}
+
+<div class="card">
+
+    <h3>📘 Historical RCA Intelligence</h3>
+
+    <p>
+        <strong>Match Score:</strong>
+        {{ historical_rca.match_score }}
+    </p>
+
+    <p>
+        <strong>Confidence:</strong>
+
+        {% if historical_rca.confidence == "High" %}
+            ✅ High
+        {% elif historical_rca.confidence == "Medium" %}
+            ⚠️ Medium
+        {% else %}
+            ❓ Low
+        {% endif %}
+    </p>
+    <p>
+        <strong>Previously Observed:</strong>
+        {{ historical_rca.occurrence_count }}
+    </p>
+
+    <p>
+        <strong>Historical Incident:</strong>
+        {{ historical_rca.incident }}
+    </p>
+
+    <p>
+        <strong>Linked Ticket:</strong>
+
+        <a
+            href="https://parikshit-pathak.atlassian.net/browse/{{ historical_rca.jira_ticket_id }}"
+            target="_blank"
+        >
+            {{ historical_rca.jira_ticket_id }}
+        </a>
+    </p>
+
+    <p>
+        <strong>Root Cause:</strong>
+        {{ historical_rca.root_cause }}
+    </p>
+
+    <p>
+        <strong>Resolution:</strong>
+        {{ historical_rca.resolution }}
+    </p>
+
+    <p>
+        <strong>Responsible Team:</strong>
+        {{ historical_rca.responsible_team }}
+    </p>
+
+    <p>
+        <strong>Fix Date:</strong>
+        {{ historical_rca.fix_date }}
+    </p>
+
+    <p>
+        <strong>Preventive Actions:</strong>
+    </p>
+
+    <ul>
+
+        {% for action in historical_rca.preventive_actions.split('.') %}
+
+            {% if action.strip() %}
+
+                <li>{{ action.strip() }}</li>
+
+            {% endif %}
+
+        {% endfor %}
+
+    </ul>
+
+    {% if historical_rca.confluence_link %}
+
+    <p>
+
+        <a
+            href="{{ historical_rca.confluence_link }}"
+            target="_blank"
+            class="btn-secondary"
+        >
+            📄 Open Historical RCA
+        </a>
+
+    </p>
+
+    {% endif %}
+
+</div>
+
+{% endif %}
+<!=================== Historical block ends =======================>
 
 <!-- ================= AI ANALYSIS ================= -->
 {% if data %}
 <div class="card">
-
+    <h3>🧠 AI Analysis</h3>
+    <h5><b><i>Refer to the historical RCA if available before implementing AI generated steps</i></b></h5>
     {% if priority %}
     <p><strong>Priority:</strong> {{ priority }}</p>
     {% endif %}
@@ -81,7 +188,7 @@
     <p><strong>⏳ SLA Due:</strong> {{ sla_text }} ({{ due_date }})</p>
     {% endif %}
 
-    <h3>🧠 AI Analysis</h3>
+    
     <p><b>Summary:</b> {{ data.summary }}</p>
     <p><b>Impact:</b> {{ data.impact }}</p>
     <p><b>Root Cause:</b> {{ data.root_cause }}</p>
@@ -145,7 +252,7 @@
 </div>
 
 <!-- ================= SIMILAR ================= -->
-{% if kb_solution %}
+{% if kb_solution and show_kb_results %}
 <div class="card">
     <h3>📚 Similar Incidents</h3>
     <p><b>Solution:</b> {{ kb_solution }}</p>
@@ -175,6 +282,25 @@
     <input type="hidden" name="incident" value="{{ incident }}">
     <input type="hidden" name="priority" value="{{ priority }}">
     <input type="hidden" name="due_date" value="{{ due_date_iso }}">
+    <!-- =====================================================
+        KB_ID TRACKING
+
+        Analyze creates the knowledgeBase record.
+
+        Create Ticket and Create Confluence must update
+        the SAME knowledgeBase row.
+
+        KB_ID is therefore carried through the form
+        and passed back to pcAnalyser.py.
+
+        Do not remove without reviewing the
+        Analyze → Ticket → Confluence workflow.
+        ===================================================== -->
+    <input type="hidden" name="kb_id" value="{{ kb_id }}">
+    <input type="hidden" name="users_impacted" value="{{ users_impacted }}">
+    <input type="hidden" name="region_impacted" value="{{ region }}">
+    <input type="hidden" name="revenue_impact" value="{{ revenue_impact }}">
+    <input type="hidden" name="workaround" value="{{ workaround }}">
 
     <p>Create Jira Ticket?</p>
     <input type="radio" name="create" value="yes" checked> Yes
@@ -206,6 +332,12 @@
         <input type="hidden" name="recommendations" value="{{ recommendations }}">
         <input type="hidden" name="ticket_link" value="{{ ticket_link }}">
         <input type="hidden" name="incident" value="{{ summary }}">
+        <input type="hidden" name="kb_id" value="{{ kb_id }}">
+       <input type="hidden" name="environment" value="{{ environment }}">
+        <input type="hidden" name="users_impacted" value="{{ users_impacted }}">
+        <input type="hidden" name="region_impacted" value="{{ region }}">
+        <input type="hidden" name="revenue_impact" value="{{ revenue_impact }}">
+        <input type="hidden" name="workaround" value="{{ workaround }}">
 
         <label>Create Confluence Page?</label><br>
         <input type="radio" name="create_conf" value="yes" checked> Yes

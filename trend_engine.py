@@ -102,6 +102,8 @@ def get_recurring_issues(days=5, threshold=2):
 
     # Calculate date window
     cutoff_date = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
+    print("Recurring Issues Window:", days)
+    print("Cutoff Date:", cutoff_date)
 
     cursor.execute("""
         SELECT Incident, COUNT(*) as count

@@ -22,7 +22,7 @@ DB_NAME = os.path.join(BASE_DIR, "IntelliIQ.db")
 env=os.getenv("ENV","local")
 if env=="local" :
     load_dotenv("mykeys.env")
-    print("the env is ",env)
+    #print("the env is ",env)
 else:
     load_dotenv()    
 #load_dotenv()
@@ -81,9 +81,10 @@ def get_all_tickets():
 
     cursor.execute("""
         SELECT Incident, Category, Jira_Ticket_Id, Date, Time,
-               problem_ticket_id, due_date, normalized_incident,status,resolved_date
+               problem_ticket_id, due_date, normalized_incident,status,resolved_date,
+               confluence_link
         FROM knowledgeBase
-        WHERE Jira_Ticket_Id IS NOT NULL AND Jira_Ticket_Id != ''
+        WHERE 1=1           
         ORDER BY Date DESC
     """)
 
@@ -95,7 +96,7 @@ def get_all_tickets():
 
     for r in rows:
 
-        incident, category, ticket_id, date_str, time_str, problem_ticket_id, db_due_date, normalized_incident, status,resolved_date = r
+        incident, category, ticket_id, date_str, time_str, problem_ticket_id, db_due_date, normalized_incident, status,resolved_date, confluence_link = r
 
         # CATEGORY
         final_category = category
@@ -196,11 +197,11 @@ def get_all_tickets():
             # ================= FIXED SLA LOGIC =================
             
         sla_met = "-"
-        print("Entering sla logic")
+        #print("Entering sla logic")
 
         try:
              if status and status.lower() == "done" and resolved_date and db_due_date:
-                print("The status is ", status)
+                #print("The status is ", status)
 
                 # Normalize resolved_date (+0530 → +05:30)
                 if "+" in resolved_date:
@@ -255,6 +256,27 @@ def get_all_tickets():
             "resolved_date": resolved_date,
             "resolved_date_display":formatted_resolved,
             "problem_ticket_id": problem_ticket_id,
+
+            # ==========================================================
+            # ====== NEW CODE ADDED ON 19 MAY FOR PENDING ACTIONS ======
+            # ==========================================================
+
+            "confluence_link": confluence_link,
+
+            "jira_missing":
+                not ticket_id,
+
+            "confluence_missing":
+
+                (
+                    not confluence_link
+                    and date_str >= "2026-05-19"
+                )
+
+            # ==========================================================
+            # ====== 19 MAY PENDING ACTION CODE ENDS ===================
+            # ==========================================================
+
         })
 
     # ✅ APPLY RISK ENGINE

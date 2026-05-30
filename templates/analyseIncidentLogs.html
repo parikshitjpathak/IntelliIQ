@@ -1,0 +1,335 @@
+{% extends "base.html" %}
+
+{% block content %}
+<form  method="POST" enctype="multipart/form-data">
+<div class="workspace-container">
+
+    <!-- ========================================= -->
+    <!-- HEADER -->
+    <!-- ========================================= -->
+
+    <!--<div class="workspace-header">
+
+        <h1>🧠 Incident Investigation Workspace</h1>
+
+        <p class="workspace-subtitle">
+            AI-assisted incident analysis, historical RCA intelligence,
+            multi-source log correlation and operational investigation.
+        </p>
+
+    </div> -->
+
+    <!-- ========================================= -->
+    <!-- INCIDENT CONTEXT -->
+    <!-- ========================================= -->
+
+   <!-- <div class="workspace-card">
+
+        <h2>📋 Incident Context</h2>
+
+        <div class="form-grid">
+
+            <div class="form-group full-width">
+
+                <label>Incident Description</label>
+
+                <textarea name="incident" rows="5" placeholder="Describe the incident in detail..." required></textarea>
+
+            </div>
+
+            <div class="form-group">
+
+                <label>Product</label>
+
+                <select name="product">
+                    <option value="Guidewire">Guidewire</option>
+                    <option value="OneShield" selected>OneShield</option>
+                </select>
+
+            </div>
+
+            <div class="form-group">
+
+                <label>Environment</label>
+
+                <select name="environment">
+                    <option value="Prod" selected>Production</option>
+                    <option value="Non-Prod">Non-Production</option>
+                </select>
+
+            </div>
+
+            <div class="form-group">
+
+                <label>Priority</label>
+
+                <select name="priority">
+                    <option value="P1">P1</option>
+                    <option value="P2">P2</option>
+                    <option value="P3">P3</option>
+                    <option value="P4">P4</option>
+                </select>
+
+            </div>
+
+            <div class="form-group">
+
+                <label>Region</label>
+
+               <select name="region_impacted">
+                    <option value="Global" selected>Global</option>
+                    <option value="APAC">APAC</option>
+                    <option value="EMEA">EMEA</option>
+                    <option value="US">US</option>
+                    <option value="India">India</option>
+                </select>
+
+            </div>
+
+            <div class="form-group">
+
+                <label>Users Impacted</label>
+
+                 <select name="users_impacted">
+                    <option value="<10">&lt;10</option>
+                    <option value="10-30">10–30</option>
+                    <option value="30-100">30–100</option>
+                    <option value=">100">&gt;100</option>
+                </select>
+
+            </div>
+
+            <div class="form-group">
+
+                <label>Revenue Impact</label>
+
+                <select name="revenue_impact">
+                    <option value="Yes" selected>Yes</option>
+                    <option value="No">No</option>
+                </select>
+
+
+            </div>
+
+            <div class="form-group">
+
+                <label>Workaround Available</label>
+
+               <select name="workaround">
+                    <option value="No" selected>No</option>
+                    <option value="Yes">Yes</option>
+                    <option value="Partial">Partial</option>
+                </select>
+            </div>
+
+        </div>
+
+    </div>-->
+
+    <!-- ========================================= -->
+    <!-- MULTI SOURCE EVIDENCE -->
+    <!-- ========================================= -->
+
+    <div class="workspace-card">
+
+        <h2>📂 Upload Applicable Logs</h2>
+
+        <div class="evidence-grid">
+
+            <!-- APPLICATION LOGS -->
+
+            <div class="evidence-card">
+
+                <h3>📜 Application Logs</h3>
+
+                <input name="app_logs"
+                    type="file"
+                    multiple
+                >
+
+                <p class="upload-hint">
+                    Upload application/server logs
+                </p>
+
+            </div>
+
+            <!-- DATABASE LOGS -->
+
+            <div class="evidence-card">
+
+                <h3>🗄 Database Logs</h3>
+
+                <input name="data_logs"
+                    type="file"
+                    multiple
+                >
+
+                <p class="upload-hint">
+                    Upload Oracle / SQL / DB logs
+                </p>
+
+            </div>
+
+            <!-- DYNATRACE -->
+
+            <div class="evidence-card">
+
+                <h3>📈 Dynatrace Evidence</h3>
+
+                <input name="dynatrace_log"
+                    type="file"
+                    multiple
+                >
+
+                <p class="upload-hint">
+                    Upload Dynatrace exports/screenshots
+                </p>
+
+            </div>
+
+            <!-- GUIDEWIRE / ONESHIELD -->
+
+            <div class="evidence-card">
+
+                <h3>🏢 Guidewire / OneShield Logs</h3>
+
+                <input name="product_logs"
+                    type="file"
+                    multiple
+                >
+
+                <p class="upload-hint">
+                    Upload platform specific logs
+                </p>
+
+            </div>
+
+            <!-- WEBMETHODS -->
+
+            <div class="evidence-card">
+
+                <h3>🔄 Middleware / WebMethods Logs</h3>
+
+                <input name="middleware_logs"
+                    type="file"
+                    multiple
+                >
+
+                <p class="upload-hint">
+                    Upload middleware integration logs
+                </p>
+
+            </div>
+
+            <!-- API -->
+
+            <div class="evidence-card">
+
+                <h3>🌐 API Gateway Logs</h3>
+
+                <input name="api_logs"
+                    type="file"
+                    multiple
+                >
+
+                <p class="upload-hint">
+                    Upload API / gateway traces
+                </p>
+
+            </div>
+
+        </div>
+
+    </div>
+    
+
+    
+
+        <!-- ========================================= -->
+        <!-- AI INVESTIGATION -->
+        <!-- ========================================= -->
+
+        <div class="workspace-card">
+
+    <h2>🤖 AI Investigation Analysis</h2>
+    
+
+    {% if ai_analysis %}
+    <p style="margin-bottom:15px;">
+    <strong>Generated from uploaded log evidence</strong>
+    </p>
+
+    <div class="analysis-box">
+
+        <div style="white-space: pre-wrap; line-height: 1.8; font-size: 15px;">
+            {{ ai_analysis }}
+        </div>
+
+    </div>
+
+    {% else %}
+
+    <div class="placeholder-box">
+
+        <p>
+
+            Upload logs and click
+            Analyze Investigation.
+
+            AI generated findings,
+            root cause analysis and
+            recommendations will
+            appear here.
+
+        </p>
+
+    </div>
+
+    {% endif %}
+
+</div>
+    </div>    
+
+   
+    <!-- ========================================= -->
+    <!-- ACTIONS -->
+    <!-- ========================================= -->
+
+    <div class="action-bar">
+
+        <button type="submit" class="primary-btn">
+            🚀 Analyze Log 
+        </button>
+
+        <!--<button class="secondary-btn">
+            🔄 Reset Workspace
+        </button> -->
+
+    </div>
+
+</div>
+<script>
+
+function runInvestigationAnalysis() {
+
+    document.getElementById(
+        "correlation-section"
+    ).style.display = "block";
+
+    document.getElementById(
+        "historical-section"
+    ).style.display = "block";
+
+    document.getElementById(
+        "ai-section"
+    ).style.display = "block";
+
+    document.getElementById(
+        "revenue-section"
+    ).style.display = "block";
+
+}
+
+</script>
+</form>
+{% endblock %}

@@ -6,6 +6,37 @@
 
 <h2>📝 RCA Generator</h2>
 
+<div id="existingRcaBanner" style="
+    display:none;
+    background:#fff3cd;
+    border:1px solid #ffeeba;
+    color:#856404;
+    padding:15px;
+    border-radius:10px;
+    margin-bottom:20px;
+    font-weight:bold;
+">
+
+    ⚠ Existing RCA already exists for this ticket.
+
+    <br><br>
+
+    <a id="existingRcaLink"
+       href="#"
+       target="_blank"
+       style="
+            background:#0d6efd;
+            color:white;
+            padding:8px 14px;
+            border-radius:6px;
+            text-decoration:none;
+       ">
+        🔗 View Existing RCA
+    </a>
+
+</div>
+
+
 {% if success_message %}
     <div class="card alert-success">
         {{ success_message }}
@@ -39,14 +70,49 @@
             <label>Incident</label>
             <input type="text" name="incident" id="incidentField" readonly required>
 
+            <label>Issue Reported Date & Time</label>
+            <input type="datetime-local" name="issue_reported_datetime">
+
+            <label>Issue Resolved Date & Time</label>
+            <input type="datetime-local" name="issue_resolved_datetime">
+
+            <label>Issue Identified By</label>
+            <select name="identified_by">
+                <option>User Reported</option>
+                <option>Support Team</option>
+                <option>Monitoring Alert</option>
+                <option>Batch Monitoring</option>
+            </select>
+
+            <label>Detection Method</label>
+            <input type="text" name="detection_method">
+
             <label>Impact</label>
             <textarea name="impact" rows="2"></textarea>
 
-            <label>Notes</label>
+            <label>📝 Investigation Notes</label>
             <textarea name="notes" rows="2"></textarea>
 
-            <label>Resolution Notes</label>
+            <label>🛠 Resolution Implemented</label>
             <textarea name="resolution_notes" rows="3"></textarea>
+
+            <label>⏰ SLA Miss Reason</label>
+                <select name="sla_miss_reason" required>
+                    <option value="">-- Select Reason --</option>
+                    <option value="Not Applicable">Not Applicable</option>
+                    <option value="Waiting for Vendor Response">Waiting for Vendor Response</option>
+                    <option value="Incorrect Assignment Group">Incorrect Assignment Group</option>
+                    <option value="Delayed Triage">Delayed Triage</option>
+                    <option value="Resource Unavailable">Resource Unavailable</option>
+                    <option value="Knowledge Gap">Knowledge Gap</option>
+                    <option value="Environment Issue">Environment Issue</option>
+                    <option value="Dependent System Failure">Dependent System Failure</option>
+                    <option value="Change Approval Delay">Change / CAB Approval Delay</option>
+                    <option value="Application Complexity">Application Complexity</option>
+                    <option value="Repeated Incident Without Permanent Fix">Repeated Incident Without Permanent Fix</option>
+                    <option value="Monitoring Gap">Monitoring Gap</option>
+                    <option value="Other">Other</option>
+                </select>
 
             <label>Status</label>
             <select name="status">
@@ -55,13 +121,49 @@
                 <option>Pending Release</option>
             </select>
 
-            <label>Team</label>
-            <input type="text" name="team">
+            <label>Team Responsible To Fix</label>
+            <select name="team">
+                <option value="Development Team">Development Team</option>
+                <option value="Support Team">Support Team</option>
+                <option value="Infrastructure Team">Infrastructure Team</option>
+                <option value="Vendor Team">Vendor Team</option>
+                <option value="DBA Team">DBA Team</option>
+                
+            </select>
+            
+
+            <label>RCA Created By</label>
+            <input type="text" name="created_by" required>
+
+            <label>Temporary Fix Applied</label>
+            <textarea name="temporary_fix" rows="2"></textarea>
+
+            <label>Permanent Fix Available</label>
+            <select name="permanent_fix_available">
+                <option>Yes</option>
+                <option>No</option>
+                <option>Planned</option>
+            </select>
+
+            <label>Vendor Involvement</label>
+            <input type="text" name="vendor_involvement">
+
+            <label>Restart Required</label>
+            <select name="restart_required">
+                <option>No</option>
+                <option>Yes</option>
+            </select>
+
+            <label>Deployment Required</label>
+            <select name="deployment_required">
+                <option>No</option>
+                <option>Yes</option>
+            </select>
 
             <label>Fix Date</label>
             <input type="date" name="fix_date">
 
-            <button type="submit" class="btn-primary">Generate RCA</button>
+            <button type="submit" class="btn-primary" id="generateRcaBtn">Generate RCA</button>
 
         </form>
 
@@ -98,14 +200,35 @@
             <p><strong>Fix Date:</strong> {{ rca_output.fix_date }}</p>
 
             <form method="POST" action="/push_rca_confluence">
-                <input type="hidden" name="ticket_id" value="{{ rca_output.ticket_id }}">
-                <input type="hidden" name="incident" value="{{ rca_output.issue }}">
-                <input type="hidden" name="rca_output" value='{{ rca_output | tojson }}'>
 
-                <button type="submit" class="btn-secondary">
-                    🚀 Push to Confluence
-                </button>
-            </form>
+    <input type="hidden" name="ticket_id" value="{{ rca_output.ticket_id }}">
+    <input type="hidden" name="incident" value="{{ rca_output.issue }}">
+    <input type="hidden" name="rca_output" value='{{ rca_output | tojson }}'>
+
+    <!-- RCA Additional Fields -->
+    <input type="hidden" name="created_by" value="{{ request.form.get('created_by','') }}">
+    <input type="hidden" name="notes" value="{{ request.form.get('notes','') }}">
+    <input type="hidden" name="fix_date" value="{{ request.form.get('fix_date','') }}">
+    <input type="hidden" name="status" value="{{ request.form.get('status','') }}">
+    <input type="hidden" name="team" value="{{ request.form.get('team','') }}">
+
+    <input type="hidden" name="issue_reported_datetime" value="{{ request.form.get('issue_reported_datetime','') }}">
+    <input type="hidden" name="issue_resolved_datetime" value="{{ request.form.get('issue_resolved_datetime','') }}">
+    <input type="hidden" name="identified_by" value="{{ request.form.get('identified_by','') }}">
+    <input type="hidden" name="detection_method" value="{{ request.form.get('detection_method','') }}">
+
+    <input type="hidden" name="temporary_fix" value="{{ request.form.get('temporary_fix','') }}">
+    <input type="hidden" name="permanent_fix_available" value="{{ request.form.get('permanent_fix_available','') }}">
+    <input type="hidden" name="vendor_involvement" value="{{ request.form.get('vendor_involvement','') }}">
+    <input type="hidden" name="restart_required" value="{{ request.form.get('restart_required','') }}">
+    <input type="hidden" name="deployment_required" value="{{ request.form.get('deployment_required','') }}">
+    <input type="hidden" name="sla_miss_reason" value="{{ request.form.get('sla_miss_reason','') }}">
+
+    <button type="submit" class="btn-secondary">
+        🚀 Push to Confluence
+    </button>
+
+</form>
 
         {% endif %}
 
@@ -115,13 +238,57 @@
 
 <!-- SCRIPT -->
 <script>
+
 function populateIncident() {
+
     var dropdown = document.getElementById("ticketDropdown");
     var selectedOption = dropdown.options[dropdown.selectedIndex];
+
     var incident = selectedOption.getAttribute("data-incident");
+    var ticketId = selectedOption.value;
 
     document.getElementById("incidentField").value = incident || "";
+
+    if (!ticketId) {
+        return;
+    }
+
+    fetch("/check_existing_rca/" + ticketId)
+
+    .then(response => response.json())
+
+    .then(data => {
+
+        const banner = document.getElementById("existingRcaBanner");
+        const link = document.getElementById("existingRcaLink");
+        const btn = document.getElementById("generateRcaBtn");
+
+        if (data.exists) {
+
+            banner.style.display = "block";
+
+            if (data.confluence_link) {
+                link.href = data.confluence_link;
+            }
+
+            btn.innerText = "Update Existing RCA";
+
+        } else {
+
+            banner.style.display = "none";
+            btn.innerText = "Generate RCA";
+        }
+
+    })
+
+    .catch(error => {
+
+        console.log("RCA AJAX error:", error);
+
+    });
+
 }
+
 </script>
 
 {% endblock %}

@@ -6,7 +6,7 @@ from datetime import datetime
 import os
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv("mykeys.env")
 
 JIRA_BASE_URL = os.getenv("JIRA_URL")
 EMAIL = os.getenv("JIRA_EMAIL")

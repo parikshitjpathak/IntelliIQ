@@ -170,6 +170,7 @@
                 <th>SLA Met</th>
                 <th>Days Open</th>
                 <th>Risk</th>
+                <th>Pending Actions</th>
             </tr>
         </thead>
 
@@ -208,6 +209,63 @@
                     🟢 Safe
                     {% endif %}
                 </td>
+
+                <!-- ========================================================== -->
+                <!-- ====== NEW CODE ADDED ON 19 MAY FOR PENDING ACTIONS ====== -->
+                <!-- ========================================================== -->
+
+                <td>
+
+                    <div style="display:flex; flex-direction:column; gap:8px;">
+
+                    {% if t.jira_missing %}
+
+                        <form method="POST" action="/create_ticket_from_dashboard">
+
+                            <input type="hidden" name="incident" value="{{ t.incident }}">
+
+                            <button
+                                type="submit"
+                                style="padding:6px 12px; border-radius:6px;"
+                            >
+                                Create Ticket
+                            </button>
+
+                        </form>
+
+                    {% endif %}
+
+                    {% if t.confluence_missing %}
+
+                        <form method="POST" action="/create_confluence_from_dashboard">
+
+                            <input type="hidden" name="incident" value="{{ t.incident }}">
+
+                            <button
+                                type="submit"
+                                style="padding:6px 12px; border-radius:6px;"
+                            >
+                                Create Confluence
+                            </button>
+
+                        </form>
+
+                    {% endif %}
+
+                    </div>
+
+                    {% if t.confluence_link %}
+                        <br>
+                        <a href="{{ t.confluence_link }}" target="_blank">
+                            Confluence Page
+                        </a>
+                    {% endif %}
+
+                </td>
+
+                <!-- ========================================================== -->
+                <!-- ====== 19 MAY PENDING ACTION CODE ENDS =================== -->
+                <!-- ========================================================== -->
             </tr>
             {% endfor %}
         </tbody>

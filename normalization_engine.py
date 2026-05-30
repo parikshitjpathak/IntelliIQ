@@ -1,129 +1,394 @@
+# ==========================================================
+# NORMALIZATION ENGINE V2
+# ==========================================================
+
 import re
 
-def clean_text(text: str) -> str:
+
+# ==========================================================
+# CLEAN TEXT
+# ==========================================================
+
+def clean_text(text):
+
     if not text:
         return ""
 
-    text = text.lower()
+    text = str(text).lower().strip()
 
-    # Normalize common variations / typos
-    text = text.replace("erros", "errors")
-    text = text.replace("signin", "sign in")
-    text = text.replace("log-in", "login")
-    text = text.replace("db", "database")
+    text = re.sub(
+        r"[^a-z0-9\s]",
+        " ",
+        text
+    )
 
-    # Remove special characters
-    text = re.sub(r'[^a-z0-9\s]', ' ', text)
-
-    # Normalize spaces
-    text = re.sub(r'\s+', ' ', text).strip()
+    text = re.sub(
+        r"\s+",
+        " ",
+        text
+    )
 
     return text
 
 
+# ==========================================================
+# INCIDENT CATEGORY RULES
+# ==========================================================
+
 CATEGORY_RULES = [
 
-    # ================= DATABASE =================
-    ("database issue", [
-        "ora", "oracle", "mysql", "postgres", "sql server", "mongodb",
-        "database", "rdbms", "query", "table", "index", "schema",
-        "insert", "update", "delete", "select",
-        "deadlock", "lock", "blocking", "table locked",
-        "connection pool", "database connection", "db connection failed",
-        "query timeout", "long running query",
-        "constraint", "cursor", "transaction failure",
-        "replication lag", "data inconsistency",
-        "backup failure", "restore issue", "tablespace full"
-    ]),
+    # ------------------------------------------------------
+    # PRODUCT / PLATFORM
+    # ------------------------------------------------------
 
-    # ================= INFRASTRUCTURE =================
-    ("infrastructure issue", [
-        "server down", "host down", "instance down", "node down",
-        "cpu high", "memory high", "disk full", "disk latency",
-        "vm", "virtual machine", "hardware failure",
-        "os issue", "linux issue", "windows server", "mount missing",
-        "process down", "thread exhaustion", "mount" ,"heap memory",
-        "filesystem full", "i o wait", "swap usage high",
-        "autoscaling issue"
-    ]),
+    (
+        "guidewire issue",
+        [
+            "guidewire",
+            "policycenter",
+            "billingcenter",
+            "claimcenter"
+        ]
+    ),
 
-    # ================= NETWORK =================
-    ("network issue", [
-        "network", "latency", "packet loss", "dns issue",
-        "ip not reachable", "vpn issue",
-        "firewall blocked", "port blocked",
-        "load balancer issue", "cdn issue",
-        "network congestion", "routing issue"
-    ]),
+    (
+        "oneshield issue",
+        [
+            "oneshield",
+            "oneshield market",
+            "oneshield policy"
+        ]
+    ),
 
-    # ================= INTEGRATION =================
-    ("integration issue", [
-        "api failure", "api error", "rest", "soap",
-        "endpoint not reachable", "third party", "vendor issue",
-        "http 500", "http 502", "http 503", "gateway error",
-        "webhook failure", "message not received",
-        "payload error", "schema mismatch",
-        "etl failure", "data sync issue",
-        "batch interface failure", "queue not processed"
-    ]),
+    # ------------------------------------------------------
+    # INSURANCE / BUSINESS
+    # ------------------------------------------------------
 
-    # ================= MIDDLEWARE =================
-    ("middleware issue", [
-        "weblogic", "websphere", "tomcat", "jboss",
-        "kafka", "mq", "rabbitmq", "webmethods",
-        "queue stuck", "consumer not processing",
-        "thread pool exhausted", "connection pool exhausted",
-        "app server down"
-    ]),
+    (
+        "policy issue",
+        [
+            "policy",
+            "policy creation",
+            "policy issuance",
+            "policy update",
+            "policy endorsement",
+            "policy renewal"
+        ]
+    ),
 
-    # ================= SECURITY =================
-    ("security issue", [
-        "unauthorized access", "authorization failure",
-        "access denied", "ssl certificate expired",
-        "token invalid", "cyber attack", "ddos",
-        "firewall alert"
-    ]),
+    (
+        "quote issue",
+        [
+            "quote",
+            "quotation",
+            "rating",
+            "premium calculation",
+            "pricing"
+        ]
+    ),
 
-    # ================= DATA / BATCH =================
-    ("data issue", [
-        "batch job failed", "scheduler failure", "cron job failed",
-        "etl failed", "data mismatch", "report mismatch",
-        "file not processed", "duplicate records",
-        "missing records"
-    ]),
+    (
+        "claim issue",
+        [
+            "claim",
+            "claims",
+            "fnol",
+            "first notice of loss",
+            "settlement"
+        ]
+    ),
 
-    # ================= CLOUD / DEVOPS =================
-    ("cloud issue", [
-        "aws", "azure", "gcp",
-        "pod crash", "container restart",
-        "kubernetes issue",
-        "deployment failed", "pipeline failed",
-        "ci cd failure", "scaling issue"
-    ]),
+    (
+        "billing issue",
+        [
+            "billing",
+            "invoice",
+            "premium payment",
+            "premium due",
+            "payment posting"
+        ]
+    ),
 
-    # ================= APPLICATION ================= (KEEP LAST)
-    ("application issue", [
-        "app", "application", "portal", "system", "platform",
-        "ui", "ux", "screen", "page", "dashboard",
-        "login", "logout", "session expired",
-        "button not working", "click not working",
-        "form error", "validation error",
-        "crash", "freeze", "hang", "payment" ,"payment failure",
-        "payment gateway","gateway",
-        "slow response", "latency", "timeout",
-        "feature not working",
-        "null pointer", "exception", "bug", "defect",
-        "deployment issue", "release issue", "version issue",
-        "code issue", "frontend", "backend", "microservice"
-    ])
+    (
+        "payment issue",
+        [
+            "payment",
+            "payment gateway",
+            "transaction",
+            "checkout",
+            "authorization",
+            "refund"
+        ]
+    ),
+
+    (
+        "document generation issue",
+        [
+            "document",
+            "pdf",
+            "letter",
+            "certificate",
+            "statement",
+            "document generation"
+        ]
+    ),
+
+    (
+        "underwriting issue",
+        [
+            "underwriting",
+            "uw",
+            "risk assessment",
+            "risk review"
+        ]
+    ),
+
+    (
+        "customer issue",
+        [
+            "customer",
+            "client",
+            "insured",
+            "policyholder"
+        ]
+    ),
+
+    # ------------------------------------------------------
+    # FUNCTIONAL
+    # ------------------------------------------------------
+
+    (
+        "login issue",
+        [
+            "login",
+            "log in",
+            "signin",
+            "sign in",
+            "unable to login",
+            "login failed"
+        ]
+    ),
+
+    (
+        "authentication issue",
+        [
+            "authentication",
+            "authorization",
+            "access denied",
+            "credential",
+            "sso",
+            "token"
+        ]
+    ),
+
+    (
+        "ui issue",
+        [
+            "page",
+            "screen",
+            "button",
+            "form",
+            "frontend",
+            "ajax",
+            "ui",
+            "display issue"
+        ]
+    ),
+
+    (
+        "report issue",
+        [
+            "report",
+            "reporting",
+            "dashboard report",
+            "export report"
+        ]
+    ),
+
+    (
+        "batch job issue",
+        [
+            "batch",
+            "scheduler",
+            "scheduled job",
+            "cron",
+            "job failure",
+            "dap jobs",
+            "dap"
+
+        ]
+    ),
+
+    (
+        "email issue",
+        [
+            "email",
+            "mail",
+            "smtp",
+            "notification email"
+        ]
+    ),
+
+    # ------------------------------------------------------
+    # TECHNICAL
+    # ------------------------------------------------------
+
+    (
+        "database issue",
+        [
+            "database",
+            "db",
+            "oracle",
+            "ora-600",
+            "ora 600",
+            "sql",
+            "query",
+            "jdbc",
+            "odbc",
+            "connection pool",
+            "deadlock"
+        ]
+    ),
+
+    (
+        "api issue",
+        [
+            "api",
+            "rest api",
+            "soap",
+            "endpoint",
+            "web service"
+        ]
+    ),
+
+    (
+        "integration issue",
+        [
+            "integration",
+            "third party",
+            "external system",
+            "vendor interface",
+            "interface failure"
+        ]
+    ),
+
+    (
+        "garbage collection issue",
+        [
+            "garbage collection",
+            "long gc",
+            "gc pause",
+            "jvm",
+            "heap"
+        ]
+    ),
+
+    (
+        "memory issue",
+        [
+            "memory leak",
+            "memory usage",
+            "out of memory",
+            "outofmemory"
+        ]
+    ),
+
+    (
+        "performance issue",
+        [
+            "slow",
+            "latency",
+            "performance",
+            "response time",
+            "high cpu"
+        ]
+    ),
+
+    (
+        "network issue",
+        [
+            "network",
+            "dns",
+            "firewall",
+            "packet loss",
+            "timeout"
+        ]
+    ),
+
+    (
+        "middleware issue",
+        [
+            "middleware",
+            "websphere",
+            "tomcat",
+            "jboss",
+            "weblogic"
+        ]
+    ),
+
+    (
+        "cloud issue",
+        [
+            "aws",
+            "azure",
+            "gcp",
+            "cloud"
+        ]
+    ),
+
+    (
+        "security issue",
+        [
+            "security",
+            "vulnerability",
+            "cyber",
+            "attack",
+            "malware"
+        ]
+    ),
+
+    (
+        "infrastructure issue",
+        [
+            "server",
+            "disk",
+            "storage",
+            "hardware",
+            "infrastructure"
+        ]
+    ),
+
+    # ------------------------------------------------------
+    # GENERIC FALLBACK
+    # ------------------------------------------------------
+
+    (
+        "application issue",
+        [
+            "application",
+            "system",
+            "service"
+        ]
+    )
 ]
 
 
-def normalize_incident(text: str) -> str:
+# ==========================================================
+# NORMALIZE INCIDENT
+# ==========================================================
+
+def normalize_incident(text):
+
     text = clean_text(text)
 
+    if not text:
+        return "other issue"
+
     for category, keywords in CATEGORY_RULES:
-        if any(k in text for k in keywords):
-            return category
+
+        for keyword in keywords:
+
+            if keyword in text:
+                return category
 
     return "other issue"

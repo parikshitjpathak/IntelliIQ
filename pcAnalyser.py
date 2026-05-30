@@ -12,12 +12,14 @@ from ticketing_service import (
 from decision_engine import get_decision
 from trend_engine import calculate_trends
 from domain_engine import enhance_with_domain
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect
 from project_health import register_project_health
 import json
 import time
 import os
 import sqlite3
+#from incident_analyser import incident_bp
+from log_analyzer_routes import register_log_analyzer_routes
 
 from ticket_dashboard import register_ticket_dashboard, get_all_tickets
 from insurance_copilot import register_insurance_copilot
@@ -46,6 +48,8 @@ import requests
 from requests.auth import HTTPBasicAuth
 from datetime import datetime
 from analyst_detail import register_analyst_detail
+from rca_engine import register_rca_routes
+from historical_rca_engine import search_historical_rca
 
 # ============= for telegram config======================
 
@@ -603,7 +607,7 @@ def send_telegram_alert(message, priority=None):
     except Exception as e:
         print("telegram err:", e)
 
-    print("Telegram response:", response.text)
+    #print("Telegram response:", response.text)
 
 
 # =============== telegram confog ends==================
@@ -700,7 +704,7 @@ def get_global_category_distribution():
     return category_counts
 
 
-print("db path: ", os.path.abspath("IntelliIQ.db"))
+#print("db path: ", os.path.abspath("IntelliIQ.db"))
 # ==========================================================
 # STEP 2: LOAD ENV VARIABLES
 # Purpose: Load API keys and configuration
@@ -771,6 +775,10 @@ register_help_page(app)
 register_process_doc(app, llm)
 register_analyst_intelligence(app, llm)
 register_analyst_detail(app, llm)
+register_rca_routes(app, llm, DB_NAME)
+register_log_analyzer_routes(app,llm,DB_NAME)
+
+#app.register_blueprint(incident_bp)
 
 # ====== Add all apps registered between these blocks
 
@@ -821,7 +829,7 @@ def operations_dashboard():
     for t in tickets:
 
         assignee = t.get("assignee") or "Unassigned"
-        print("ASSIGNEE:", t.get("assignee"))
+        #print("ASSIGNEE:", t.get("assignee"))
         risk = t.get("risk_level")
 
         # moved inside loop (fix)
@@ -941,8 +949,209 @@ def inject_global_vars():
 
 @app.route("/")
 def home():
-    incident_prefill = request.args.get("incident", "")
-    return render_template("PC_IncidentAnalyser.html")
+    #incident_prefill = request.args.get("incident", "")
+    #return render_template("PC_IncidentAnalyser.html")
+    return render_template("home.html")
+
+@app.route(
+    "/incidentLog_analyser",
+    methods=["GET", "POST"]
+)
+#=============== adding this for log analyser=====================
+@app.route(
+    "/incidentLog_analyser",
+    methods=["GET", "POST"]
+)
+def incident_workspace():
+
+    if request.method == "GET":
+
+        return render_template(
+            "analyseIncidentLogs.html"
+        )
+
+    # ======================================================
+    # COLLECT INCIDENT
+    # ======================================================
+
+    incident = request.form.get(
+        "incident",
+        "Log Investigation"
+    )
+
+    # ======================================================
+    # COLLECT LOG CONTENT
+    # ======================================================
+
+    uploaded_files = []
+
+    upload_fields = [
+
+        "app_logs",
+        "data_logs",
+        "dynatrace_log",
+        "product_logs",
+        "middleware_logs",
+        "api_logs"
+
+    ]
+
+    for field in upload_fields:
+
+        files = request.files.getlist(
+            field
+        )
+
+        for file in files:
+
+            if file and file.filename:
+
+                try:
+
+                    content = file.read().decode(
+                        "utf-8",
+                        errors="ignore"
+                    )
+
+                    uploaded_files.append(
+
+                        f"""
+
+FILE: {file.filename}
+
+{content[:5000]}
+
+"""
+
+                    )
+
+                except Exception as e:
+
+                    uploaded_files.append(
+
+                        f"""
+
+FILE: {file.filename}
+
+Unable to read file.
+
+Error:
+{str(e)}
+
+"""
+
+                    )
+
+    # ======================================================
+    # BUILD EVIDENCE SUMMARY
+    # ======================================================
+
+    evidence_summary = "\n".join(
+        uploaded_files
+    )
+
+    # ======================================================
+    # AI PROMPT
+    # ======================================================
+
+    prompt = f"""
+
+You are a Senior Production Support Engineer,
+Site Reliability Engineer and RCA Specialist.
+
+Analyze the uploaded logs carefully.
+
+INCIDENT
+
+{incident}
+
+LOG EVIDENCE
+
+{evidence_summary}
+
+Return your response using EXACTLY the format below.
+
+# SUMMARY
+
+Provide a concise executive summary.
+
+# LIKELY ROOT CAUSE
+
+Identify the most probable root cause.
+
+# EVIDENCE FOUND
+
+List the log evidence supporting your conclusion.
+
+# RECOMMENDED ACTIONS
+
+Provide actionable troubleshooting steps.
+
+# OPERATIONAL IMPACT
+
+Describe the business and operational impact.
+
+# CONFIDENCE
+
+Choose only one:
+
+HIGH
+MEDIUM
+LOW
+
+Do not include any other headings.
+
+"""
+
+    # ======================================================
+    # LLM ANALYSIS
+    # ======================================================
+
+    response = llm.invoke(
+        prompt
+    )
+
+    ai_analysis = (
+
+        response.content
+
+        if hasattr(
+            response,
+            "content"
+        )
+
+        else str(response)
+
+    )
+
+    # ======================================================
+    # RETURN RESULT
+    # ======================================================
+
+    return render_template(
+
+        "analyseIncidentLogs.html",
+
+        ai_analysis=ai_analysis
+
+    )
+
+
+
+
+#============== log analyser ends here ============================
+
+@app.route("/incident-analysis")
+def incident_analysis():
+
+    incident_prefill = request.args.get(
+        "incident",
+        ""
+    )
+
+    return render_template(
+        "PC_IncidentAnalyser.html"
+    )
 
 
 from trend_engine import get_recurring_issues
@@ -985,131 +1194,154 @@ def get_all_incidents():
 # ======================== incident explprer code ends here====================
 
 
-# ================= RCA prompt ======================
-def generate_rca(
+
+
+# ==========================================================
+# ====== NEW CODE ADDED ON 19 MAY FOR PENDING INCIDENT TRACKING ======
+# ==========================================================
+
+def save_analyzed_incident(
+
     incident,
-    ticket_id,
-    impact,
-    notes,
-    status,
-    team,
-    fix_date,
-    matches,
-    resolution_notes,
+    solution,
+    root_cause,
+    category,
+    priority,
+    due_date,
+    env,
+    users,
+    region,
+    revenue,
+    workaround,
+    normalized_incident
+
 ):
-    print("Generate RCA function invoked")
 
-    # Prepare context
-    matches_context = (
-        "\n".join([str(m[0]) if isinstance(m, tuple) else str(m) for m in matches[:5]])
-        if matches
-        else "No similar incidents found"
-    )
-
-    # RCA Prompt (JSON structured)
-    prompt = f"""
-    You are an expert support engineer responsible for generating a Root Cause Analysis (RCA).
-
-    Return ONLY valid JSON. Do not include any extra text.
-
-    Format:
-    {{
-      "issue": "",
-      "ticket_id": "",
-      "impact": "",
-      "detection": "",
-      "root_cause": "",
-      "resolution": "",
-      "preventive_actions": "",
-      "status": "",
-      "responsible_team": "",
-      "fix_date": ""
-    }}
-
-    ---
-
-    Incident: {incident}
-    Ticket ID: {ticket_id}
-
-    Engineer Input:
-    Impact: {impact}
-    Additional Notes: {notes}
-    Resolution Notes: {resolution_notes}
-    Current Status: {status}
-    Responsible Team: {team}
-    Planned Fix Date: {fix_date}
-
-    ---
-
-    IMPORTANT:
-    - Use "Resolution Notes" to generate the "resolution" field
-    - Expand it into a clear, professional explanation
-    - Do NOT guess resolution if notes are provided
-
-    - Preventive actions must be:
-      • Based on similar past incidents
-      • Practical and system-level (not generic)
-      • Focus on avoiding recurrence
-
-    ---
-
-    Similar Past Incidents:
-    {matches_context}
-    """
-
-    try:
-        # Call LLM (LangChain)
-        response = llm.invoke(prompt)
-
-        # Extract text
-        rca_text = response.content
-
-        # Convert JSON string → dict
-        import json
-
-        rca_output = json.loads(rca_text)
-
-    except Exception as e:
-        print("RCA Error:", str(e))
-        rca_output = {
-            "issue": incident,
-            "ticket_id": ticket_id,
-            "impact": impact,
-            "detection": "Error generating detection",
-            "root_cause": "Unable to determine",
-            "resolution": "Check logs and retry",
-            "preventive_actions": "Monitor system",
-            "status": status,
-            "responsible_team": team,
-            "fix_date": fix_date,
-        }
-
-    return rca_output
-
-
-# ================= RCA prompt ends here=====================
-
-# ============= get jira tickets for RCA===============
-
-
-def get_ticket_data():
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
 
+    # ======================================================
+    # AVOID DUPLICATE PENDING RECORDS commenting this block on 30th may
+    # ======================================================
+
+    #cursor.execute("""
+
+     #   SELECT KB_ID
+      #  FROM knowledgeBase
+       # WHERE LOWER(TRIM(incident)) = LOWER(TRIM(?))
+        #ORDER BY KB_ID DESC
+        #LIMIT 1
+
+    #""", (incident,))
+
+    #existing = cursor.fetchone()
+
+   # if existing:
+
+    #    kb_id = existing[0]
+
+     #   conn.close()
+
+      #  print(
+       #     f"Existing KB_ID = {kb_id}")
+
+      #  return kb_id
+
+    # ======================================================
+    # INSERT PRELIMINARY INCIDENT RECORD
+    # ======================================================
+
+    now = datetime.now()
+
+    date = now.strftime("%Y-%m-%d")
+    time = now.strftime("%H:%M:%S")
+
+    keywords = " ".join(
+        incident.lower().split()
+    )
+
+    try:
+
+        due_date_db = due_date.strftime(
+            "%Y-%m-%d %H:%M:%S"
+        )
+
+    except:
+
+        due_date_db = None
+
     cursor.execute("""
-        SELECT Jira_Ticket_Id, Incident 
-        FROM Knowledgebase
-        WHERE Jira_Ticket_Id IS NOT NULL AND Jira_Ticket_Id != ''
-        ORDER BY Date DESC
-    """)
 
-    rows = cursor.fetchall()
-    conn.close()
+        INSERT INTO knowledgeBase (
 
-    return rows
+            incident,
+            solution,
+            root_cause,
+            category,
+            date,
+            time,
+            keywords,
+            jira_ticket_id,
+            priority,
+            due_date,
+            environment,
+            users_impacted,
+            region,
+            revenue_impact,
+            workaround,
+            normalized_incident
+
+        )
+
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+
+    """, (
+
+        incident,
+        solution,
+        root_cause,
+        category,
+        date,
+        time,
+        keywords,
+        None,
+        priority,
+        due_date_db,
+        env,
+        users,
+        region,
+        revenue,
+        workaround,
+        normalized_incident
+
+    ))
+    try:
+
+            kb_id = cursor.lastrowid
+
+            conn.commit()
+
+            #print(f"Saved KB_ID = {kb_id}")
+
+            return kb_id
+
+    finally:
+
+        conn.close()
 
 
-# =============== code ends here==========================
+# ==========================================================
+# ====== 19 MAY CODE ENDS ==================================
+# ==========================================================
+
+
+
+
+
+
+
+
+
 
 
 # =========================== dashboard creation =====================
@@ -1151,10 +1383,10 @@ def dashboard():
         top_category = None
         top_percentage = 0
 
-    print("FINAL category counts:", global_category_counts)
-    print("VALID categories:", valid_categories)
-    print("TOP category:", top_category)
-    print("top_category:", top_category)
+   # print("FINAL category counts:", global_category_counts)
+   # print("VALID categories:", valid_categories)
+   # print("TOP category:", top_category)
+   # print("top_category:", top_category)
 
     recommendation = "No recommendation available"
     if top_category == "Frontend":
@@ -1213,12 +1445,12 @@ def analyze():
     # priority = request.form["priority"]
     env = request.form.get("environment")
     users = request.form.get("users_impacted")
-    region = request.form.get("region")
+    region = request.form.get("region_impacted")
     revenue = request.form.get("revenue_impact")
     workaround = request.form.get("workaround")
 
-    print("RAW:", incident)
-    print("NORMALIZED:", normalized_incident)
+   # print("RAW:", incident)
+   # print("NORMALIZED:", normalized_incident)
 
     priority, score = calculate_priority(env, users, revenue, workaround, region)
     # ===== PRIORITY REASONS =====
@@ -1291,6 +1523,10 @@ def analyze():
 
     ai_output = chain.invoke({"incident": incident})
     data = json.loads(ai_output)
+
+
+
+
     print("AI DAta: ", data)
     print("parikshit is working hard")
 
@@ -1306,6 +1542,23 @@ def analyze():
     # match, score, frequency, top_root_cause, matches = search_kb_new(incident)- commented this to replace the CSV with DB
     # ============ db search code starts ===================
     result = search_kb_new(incident)
+    # ==========================================================
+    # HISTORICAL RCA INTELLIGENCE
+    # ==========================================================
+
+    historical_rca = search_historical_rca(
+        incident
+    )
+
+    historical_rca_found = (
+        historical_rca is not None
+    )
+        # ==========================================================
+    # RCA IS NOW THE PRIMARY SOURCE OF TRUTH
+    # ==========================================================
+
+    #show_kb_results = not historical_rca_found
+    show_kb_results = result is not None
 
     if result:
         match = result.get("match")
@@ -1319,29 +1572,9 @@ def analyze():
         top_root_cause = result.get("top_root_cause", "")
         matches = result.get("matches", [])
 
-        # ================ using thsi for genetting RCA output=============
-        # RCA inputs (for now use defaults — we’ll replace with form later)
-        ticket_id = "AUTO-" + str(int(time.time()))
-        impact = "To be provided"
-        notes = ""
-        status = "Open"
-        team = "Support Team"
-        fix_date = ""
-        resolution_notes = ""
+        
 
-        rca_output = generate_rca(
-            incident,
-            ticket_id,
-            impact,
-            notes,
-            status,
-            team,
-            fix_date,
-            matches,
-            resolution_notes,
-        )
 
-        # ================== RCA generating ends here=======================
         # ===== CLUSTERING LOGIC START =====
         category_counts = {}
 
@@ -1404,6 +1637,75 @@ def analyze():
     # ==================END SUGGESTION ENGINE ===================
     suggestions = enhance_with_domain(product, suggestions, incident)
 
+
+    # ==========================================================
+    # ====== NEW CODE ADDED ON 19 MAY FOR AUTO INCIDENT SAVE ======
+    # ==========================================================
+
+    try:
+
+        category = categorize_incident(incident)
+
+        if not category or category.lower() == "unclassified":
+            if normalized_incident:
+                category = normalized_incident.replace("_", " ").title()
+
+
+        # =====================================================
+        # INCIDENT PERSISTENCE
+        #
+        # Analyze now creates the knowledgeBase record.
+        #
+        # The returned KB_ID is passed to the UI and later
+        # used by Create Ticket and Create Confluence to
+        # update the SAME row instead of creating duplicates.
+        # =====================================================
+        kb_id=save_analyzed_incident(
+
+            incident=incident,
+
+            solution=data.get(
+                "recommendations",
+                ""
+            ),
+
+            root_cause=data.get(
+                "root_cause",
+                ""
+            ),
+
+            category=category,
+
+            priority=priority,
+
+            due_date=due_date,
+
+            env=env,
+
+            users=users,
+
+            region=region,
+
+            revenue=revenue,
+
+            workaround=workaround,
+
+            normalized_incident=normalized_incident
+
+        )
+        #print("ANALYZE KB_ID =", kb_id)
+
+    except Exception as save_error:
+        import traceback
+
+        #print("Pending incident save error:",str(save_error))
+        traceback.print_exc()
+
+    # ==========================================================
+    # ====== 19 MAY AUTO SAVE CODE ENDS ========================
+    # ==========================================================
+
+
     # ===========troubleshooting suggestions code ends here=============
 
     # print("Match keys:", matches[0].keys()
@@ -1439,7 +1741,7 @@ def analyze():
     else:
         top_category = None
         top_percentage = 0
-    print("Global Category Counts:", global_category_counts)
+    #print("Global Category Counts:", global_category_counts)
 
     priority_message = f"Based on the incident and its impact, this should be treated as a Priority {priority} incident (Score: {score})"
 
@@ -1462,6 +1764,9 @@ def analyze():
         existing_ticket=existing_ticket,
         ticket_list=ticket_list,
         suggestions=suggestions,
+        historical_rca=historical_rca,
+        historical_rca_found=historical_rca_found,
+        show_kb_results=show_kb_results,
         count_1d=count_1d,
         count_3d=count_3d,
         count_5d=count_5d,
@@ -1475,43 +1780,20 @@ def analyze():
         top_category=top_category,
         top_percentage=top_percentage,
         # rca_output=rca_output,
+        users_impacted=users,
+        region=region,
+        revenue_impact=revenue,
+        workaround=workaround,
+        environment=env,
         show_result=True,
+        kb_id=kb_id,
         active_page="home",
     )
 
 
-# ==================== RCA generaor begins===============
 
 
-@app.route("/rca", methods=["GET", "POST"])
-@app.route("/rca", methods=["GET", "POST"])
-def rca_page():
 
-    tickets = get_all_incidents()  # fetch from DB
-
-    if request.method == "POST":
-
-        incident = request.form.get("incident")
-        ticket_id = request.form.get("ticket_id")
-        impact = request.form.get("impact")
-        notes = request.form.get("notes")
-        resolution_notes = request.form.get("resolution_notes")
-        status = request.form.get("status")
-        team = request.form.get("team")
-        fix_date = request.form.get("fix_date")
-
-        rca_output = generate_rca_simple(
-            incident, ticket_id, impact, notes, resolution_notes, status, team, fix_date
-        )
-
-        return render_template("rca.html", rca_output=rca_output, tickets=tickets)
-
-    return render_template(
-        "rca.html", rca_output=None, tickets=tickets, active_page="rca"
-    )
-
-
-# rca generator code ends here===========================
 
 
 # ==========================================================
@@ -1561,7 +1843,7 @@ def generate_rca_simple(
         response = llm.invoke(prompt)
 
         raw_text = response.content.strip()
-        print("RAW LLM OUTPUT:", raw_text)
+        #print("RAW LLM OUTPUT:", raw_text)
 
         # 🔥 Remove ```json wrapper
         if raw_text.startswith("```"):
@@ -1570,7 +1852,7 @@ def generate_rca_simple(
         rca_output = json.loads(raw_text)
 
     except Exception as e:
-        print("RCA error:", e)
+        #print("RCA error:", e)
 
         rca_output = {
             "issue": incident,
@@ -1599,6 +1881,18 @@ def create_ticket():
 
     # changed this on 17th april after indentifying duplication issue summary = request.form.get("summary")
     incident = request.form.get("incident")
+        # =====================================================
+    # UPDATE EXISTING INCIDENT RECORD
+    #
+    # Do NOT insert a new knowledgeBase row here.
+    #
+    # Analyze has already created the record.
+    # Use KB_ID to update the existing row.
+    # =====================================================
+    kb_id = request.form.get("kb_id")
+
+   # print("CREATE TICKET KB_ID =",kb_id)
+
     from normalization_engine import normalize_incident
 
     normalized_incident = normalize_incident(incident)
@@ -1608,7 +1902,7 @@ def create_ticket():
     impact = request.form["impact"]
     root_cause = request.form["root_cause"]
     recommendations = request.form["recommendations"]
-    print("Normalized:", normalized_incident)
+    #print("Normalized:", normalized_incident)
 
     from datetime import datetime, timedelta
 
@@ -1666,8 +1960,8 @@ def create_ticket():
 
     ticket_link = f"{os.getenv('JIRA_URL')}/browse/{ticket_key}"
     jira_ticket_id = ticket_link.split("/")[-1]
-    print("New Ticket ID " + jira_ticket_id)
-    print("form data is here ", request.form)
+    #print("New Ticket ID " + jira_ticket_id)
+    #print("form data is here ", request.form)
 
     # =====================================================
     # updating the csv file with the new ticekt details
@@ -1687,48 +1981,80 @@ def create_ticket():
     keywords = " ".join(incident.lower().split())
 
     # ===== INSERT INTO SQLITE =====
+    # =====================================================
+# UPDATE EXISTING ANALYZED INCIDENT
+# =====================================================
+
+    kb_id = request.form.get("kb_id")
+
+   # print("UPDATING KB_ID =",kb_id)
+
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
 
-    cursor.execute("select name from sqlite_master where type='table';")
-    # print("tables: ",cursor.fetchall())
-
-    category = categorize_incident(incident)
-
-    # Fallback at INSERT time (first level correction)
-    if not category or category.lower() == "unclassified":
-        if normalized_incident:
-            category = normalized_incident.replace("_", " ").title()
-    from datetime import datetime
-
-    now = datetime.now()
-
-    date = now.strftime("%Y-%m-%d")
-    time = now.strftime("%H:%M:%S")
-    from datetime import datetime
-
     try:
-        parsed = datetime.fromisoformat(due_date)
-        due_date_db = parsed.strftime("%Y-%m-%d %H:%M:%S")
+
+        parsed = datetime.fromisoformat(
+            due_date
+        )
+
+        due_date_db = parsed.strftime(
+            "%Y-%m-%d %H:%M:%S"
+        )
+
     except:
-        due_date_db = due_date  # fallback safety
+
+        due_date_db = due_date
+        #================== 30 may adding this block to debug the update command=======
+        #print("\n" + "=" * 61)
+        #print("CREATE TICKET UPDATE DEBUG")
+        #print("=" * 61)
+
+        #print("KB_ID             :", kb_id)
+        #print("Incident          :", incident)
+        #print("Solution          :", solution)
+        #print("Root Cause        :", root_cause)
+        #print("Jira Ticket ID    :", jira_ticket_id)
+        #print("Priority          :", priority)
+        #print("Due Date          :", due_date_db)
+        #print("Environment       :", env)
+        #print("Users Impacted    :", users)
+        #print("Region            :", region)
+        #print("Revenue Impact    :", revenue)
+        #print("Workaround        :", workaround)
+        #print("Normalized        :", normalized_incident)
+
+        #print("=" * 61)
+
+
+        #=================== debug ends on 30th may=============================
 
     cursor.execute(
+
         """
-                   INSERT INTO knowledgeBase (incident, solution, root_cause, category, date, time, keywords,
-                                              jira_ticket_id,
-                                              priority, due_date, environment, users_impacted, region, revenue_impact,
-                                              workaround,normalized_incident)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                   """,
+        UPDATE knowledgeBase
+
+        SET
+
+            solution = ?,
+            root_cause = ?,
+            jira_ticket_id = ?,
+            priority = ?,
+            due_date = ?,
+            environment = ?,
+            users_impacted = ?,
+            region = ?,
+            revenue_impact = ?,
+            workaround = ?,
+            normalized_incident = ?
+
+        WHERE KB_ID = ?
+        """,
+
         (
-            incident,
+
             solution,
             root_cause,
-            category,
-            date,
-            time,
-            keywords,
             jira_ticket_id,
             priority,
             due_date_db,
@@ -1738,8 +2064,13 @@ def create_ticket():
             revenue,
             workaround,
             normalized_incident,
-        ),
+            kb_id
+
+        )
+
     )
+
+    #print(f"Rows Updated = {cursor.rowcount}")
 
     conn.commit()
     conn.close()
@@ -1754,75 +2085,205 @@ def create_ticket():
     )
 
 
-# ============== update RCA to confluence===================
 
 
-@app.route("/push_rca_confluence", methods=["POST"])
-def push_rca_confluence():
+# ==========================================================
+# ====== NEW CODE ADDED ON 19 MAY FOR DASHBOARD TICKET CREATION ======
+# ==========================================================
 
-    ticket_id = request.form.get("ticket_id")
-    # incident = request.form.get("incident") changes done on 17th april to fix the duplicate title issue below code
-    ticket_id = request.form.get("ticket_id")
+@app.route("/create_ticket_from_dashboard", methods=["POST"])
+def create_ticket_from_dashboard():
 
-    # 🔥 Fetch incident from DB (single source of truth)
+    incident = request.form.get("incident")
+
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
 
     cursor.execute(
+
         """
-                   SELECT Incident
-                   FROM Knowledgebase
-                   WHERE Jira_Ticket_Id = ?
-                   """,
-        (ticket_id,),
+        SELECT
+
+            incident,
+            solution,
+            root_cause,
+            priority,
+            due_date
+
+        FROM knowledgeBase
+
+        WHERE LOWER(TRIM(incident)) = LOWER(TRIM(?))
+
+        ORDER BY KB_ID DESC
+        LIMIT 1
+        """,
+
+        (incident,)
     )
 
     row = cursor.fetchone()
+
+    if not row:
+
+        conn.close()
+        return "Incident not found"
+
+    incident, solution, root_cause, priority, due_date = row
+
+    description = f"""
+
+    Root Cause:
+    {root_cause}
+
+    Recommendations:
+    {solution}
+
+    """
+
+    try:
+
+        parsed_due_date = datetime.fromisoformat(
+            due_date
+        )
+
+        jira_due_date = parsed_due_date.strftime(
+            "%Y-%m-%d"
+        )
+
+    except:
+
+        jira_due_date = None
+
+    ticket_key = create_jira_ticket(
+
+        incident,
+        description,
+        jira_due_date
+
+    )
+
+    cursor.execute(
+
+        """
+        UPDATE knowledgeBase
+
+        SET jira_ticket_id = ?
+
+        WHERE LOWER(TRIM(incident)) = LOWER(TRIM(?))
+        """,
+
+        (
+            ticket_key,
+            incident
+        )
+    )
+
+    conn.commit()
     conn.close()
 
-    incident = row[0] if row else "Unknown Incident"
-    # 17th april code change complete
-    rca_output = request.form.get("rca_output")
+    return redirect("/operations_dashboard")
 
-    # ✅ Convert JSON string → dict
-    rca_data = json.loads(rca_output)
+# ==========================================================
+# ====== 19 MAY DASHBOARD TICKET CREATION CODE ENDS ========
+# ==========================================================
 
-    # ✅ Build structured Confluence content (simple, safe)
-    content = f"""
-Issue: {rca_data.get("issue", "")}
 
-Impact: {rca_data.get("impact", "")}
 
-Root Cause: {rca_data.get("root_cause", "")}
 
-Resolution: {rca_data.get("resolution", "")}
+# ==========================================================
+# ====== NEW CODE ADDED ON 20 MAY FOR DASHBOARD CONFLUENCE ======
+# ==========================================================
 
-Preventive Actions: {rca_data.get("preventive_actions", "")}
+@app.route("/create_confluence_from_dashboard", methods=["POST"])
+def create_confluence_from_dashboard():
 
-Status: {rca_data.get("status", "")}
+    incident = request.form.get("incident")
 
-Responsible Team: {rca_data.get("team", "")}
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
 
-Fix Date: {rca_data.get("fix_date", "")}
-"""
+    cursor.execute(
 
-    # ✅ Send clean structured text (NOT HTML)
+        """
+        SELECT
+
+            jira_ticket_id,
+            incident,
+            root_cause,
+            solution
+
+        FROM knowledgeBase
+
+        WHERE LOWER(TRIM(incident)) = LOWER(TRIM(?))
+
+        ORDER BY KB_ID DESC
+        LIMIT 1
+        """,
+
+        (incident,)
+    )
+
+    row = cursor.fetchone()
+
+    if not row:
+
+        conn.close()
+        return "Incident not found"
+
+    jira_key, incident, root_cause, solution = row
+
+    impact = "Operational Impact"
+
     page_link = create_confluence_page(
-        incident, "RCA Generated via IntelliIQ", content, "", ticket_id
+
+        incident,
+        impact,
+        root_cause,
+        solution,
+        jira_key
+
     )
 
-    add_jira_comment(ticket_id, page_link)
+    try:
 
-    return render_template(
-        "rca.html",
-        success_message="RCA pushed to Confluence successfully!",
-        page_link=page_link,
-        rca_output=rca_data,
-        ticket_data=get_ticket_data(),
+        add_jira_comment(
+            jira_key,
+            page_link
+        )
+
+    except Exception as jira_comment_error:
+
+        #print("Jira comment error:",str(jira_comment_error))
+
+        cursor.execute(
+
+        """
+        UPDATE knowledgeBase
+
+        SET confluence_link = ?
+
+        WHERE LOWER(TRIM(incident)) = LOWER(TRIM(?))
+        """,
+
+        (
+            page_link,
+            incident
+        )
     )
 
+    conn.commit()
+    conn.close()
 
-# ================= rca confluence update ends here================
+    return redirect("/operations_dashboard")
+
+# ==========================================================
+# ====== 20 MAY DASHBOARD CONFLUENCE CODE ENDS =============
+# ==========================================================
+
+
+
+
+
 
 
 # ==========================================================
@@ -1864,14 +2325,48 @@ def create_confluence():
 
     add_jira_comment(jira_key, page_link)
 
-    return render_template(
-        "PC_IncidentAnalyser.html",
-        confluence_link=page_link,
-        ticket_link=ticket_link,
-        # rca_output=rca_output,
-        # matches=matches,
-        # ticket_list=ticket_list
-    )
+    # ==========================================================
+    # ====== NEW CODE ADDED ON 19 MAY FOR CONFLUENCE PERSISTENCE ======
+    # ==========================================================
+
+    try:
+
+        conn = sqlite3.connect(DB_NAME)
+        cursor = conn.cursor()
+
+        cursor.execute(
+
+            """
+            UPDATE knowledgeBase
+            SET confluence_link = ?
+            WHERE jira_ticket_id = ?
+            """,
+
+            (
+                page_link,
+                jira_key
+            )
+        )
+
+        conn.commit()
+        conn.close()
+
+    except Exception as conf_error:
+
+       # print("Confluence persistence error:",str(conf_error))
+
+    # ==========================================================
+    # ====== 19 MAY CONFLUENCE PERSISTENCE CODE ENDS ===========
+    # ==========================================================
+
+        return render_template(
+            "PC_IncidentAnalyser.html",
+            confluence_link=page_link,
+            ticket_link=ticket_link,
+            # rca_output=rca_output,
+            # matches=matches,
+            # ticket_list=ticket_list
+        )
 
 #===== performance snapshot trigger (manual - correct placement)=====
 @app.route("/run_performance_snapshot")
