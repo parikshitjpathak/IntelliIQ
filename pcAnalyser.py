@@ -2353,13 +2353,13 @@ def create_confluence():
 
     except Exception as conf_error:
 
-       # print("Confluence persistence error:",str(conf_error))
+        print("Confluence persistence error:",str(conf_error))
 
     # ==========================================================
     # ====== 19 MAY CONFLUENCE PERSISTENCE CODE ENDS ===========
     # ==========================================================
 
-        return render_template(
+    return render_template(
             "PC_IncidentAnalyser.html",
             confluence_link=page_link,
             ticket_link=ticket_link,
