@@ -25,7 +25,7 @@ from business_impact import register_business_impact_routes
 
 from ticket_dashboard import register_ticket_dashboard, get_all_tickets
 from insurance_copilot import register_insurance_copilot
-from critical_metrics import register_critical_metrics
+#from critical_metrics import register_critical_metrics
 from system_advisor import register_system_advisor
 
 from performance_service import get_top_performers, get_analyst_performance, generate_analyst_insights
@@ -52,6 +52,7 @@ from datetime import datetime
 from analyst_detail import register_analyst_detail
 from rca_engine import register_rca_routes
 from historical_rca_engine import search_historical_rca
+from db_debug import db_debug_bp
 
 # ============= for telegram config======================
 
@@ -770,7 +771,7 @@ register_insurance_copilot(app, llm)
 register_project_health(app)
 
 register_ticket_dashboard(app)
-register_critical_metrics(app)
+#register_critical_metrics(app)
 register_system_advisor(app)
 register_business_impact_routes(app)
 
@@ -780,7 +781,7 @@ register_analyst_intelligence(app, llm)
 register_analyst_detail(app, llm)
 register_rca_routes(app, llm, DB_NAME)
 register_log_analyzer_routes(app,llm,DB_NAME)
-
+app.register_blueprint(db_debug_bp)
 #app.register_blueprint(incident_bp)
 
 # ====== Add all apps registered between these blocks
@@ -2061,30 +2062,30 @@ def create_ticket():
 def create_ticket_from_dashboard():
 
     incident = request.form.get("incident")
+    kb_id = request.form.get("kb_id")
+    print("KB_ID:", kb_id)
+
+    print("Dashboard Create Ticket Request:", incident)
 
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
 
     cursor.execute(
-
         """
         SELECT
-
             incident,
             solution,
             root_cause,
             priority,
             due_date
-
         FROM knowledgeBase
-
-        WHERE LOWER(TRIM(incident)) = LOWER(TRIM(?))
-
+        WHERE KB_ID = ?
         ORDER BY KB_ID DESC
         LIMIT 1
         """,
+        (kb_id,)
 
-        (incident,)
+        
     )
 
     row = cursor.fetchone()
@@ -2092,57 +2093,53 @@ def create_ticket_from_dashboard():
     if not row:
 
         conn.close()
+        print("Incident not found in knowledgeBase")
         return "Incident not found"
 
     incident, solution, root_cause, priority, due_date = row
 
     description = f"""
 
-    Root Cause:
-    {root_cause}
+Root Cause:
+{root_cause}
 
-    Recommendations:
-    {solution}
+Recommendations:
+{solution}
 
-    """
+"""
 
     try:
 
-        parsed_due_date = datetime.fromisoformat(
-            due_date
-        )
+        parsed_due_date = datetime.fromisoformat(due_date)
 
-        jira_due_date = parsed_due_date.strftime(
-            "%Y-%m-%d"
-        )
+        jira_due_date = parsed_due_date.strftime("%Y-%m-%d")
 
-    except:
+    except Exception as due_date_error:
 
+        print("Due Date Parse Error:", str(due_date_error))
         jira_due_date = None
 
     ticket_key = create_jira_ticket(
-
         incident,
         description,
         jira_due_date
-
     )
+
+    print("Returned Ticket:", ticket_key)
 
     cursor.execute(
-
         """
         UPDATE knowledgeBase
-
-        SET jira_ticket_id = ?
-
-        WHERE LOWER(TRIM(incident)) = LOWER(TRIM(?))
+        SET Jira_Ticket_Id = ?
+        WHERE KB_ID = ?
         """,
-
         (
             ticket_key,
-            incident
+            kb_id
         )
     )
+
+    print("Rows Updated:", cursor.rowcount)
 
     conn.commit()
     conn.close()
@@ -2164,29 +2161,28 @@ def create_ticket_from_dashboard():
 def create_confluence_from_dashboard():
 
     incident = request.form.get("incident")
+    kb_id = request.form.get("kb_id")
+
+    print("KB_ID:", kb_id)
+
+    print("Dashboard Create Confluence Request:", incident)
 
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
 
     cursor.execute(
-
         """
         SELECT
-
-            jira_ticket_id,
+            Jira_Ticket_Id,
             incident,
             root_cause,
             solution
-
         FROM knowledgeBase
-
-        WHERE LOWER(TRIM(incident)) = LOWER(TRIM(?))
-
+        WHERE KB_ID = ?
         ORDER BY KB_ID DESC
         LIMIT 1
         """,
-
-        (incident,)
+        (kb_id,)
     )
 
     row = cursor.fetchone()
@@ -2194,6 +2190,7 @@ def create_confluence_from_dashboard():
     if not row:
 
         conn.close()
+        print("Incident not found in knowledgeBase")
         return "Incident not found"
 
     jira_key, incident, root_cause, solution = row
@@ -2201,14 +2198,28 @@ def create_confluence_from_dashboard():
     impact = "Operational Impact"
 
     page_link = create_confluence_page(
-
         incident,
         impact,
         root_cause,
         solution,
         jira_key
-
     )
+
+    print("Confluence Link:", page_link)
+
+    cursor.execute(
+        """
+        UPDATE knowledgeBase
+        SET confluence_link = ?
+        WHERE KB_ID = ?
+        """,
+        (
+            page_link,
+            kb_id
+        )
+    )
+
+    print("Rows Updated:", cursor.rowcount)
 
     try:
 
@@ -2219,23 +2230,7 @@ def create_confluence_from_dashboard():
 
     except Exception as jira_comment_error:
 
-        #print("Jira comment error:",str(jira_comment_error))
-
-        cursor.execute(
-
-        """
-        UPDATE knowledgeBase
-
-        SET confluence_link = ?
-
-        WHERE LOWER(TRIM(incident)) = LOWER(TRIM(?))
-        """,
-
-        (
-            page_link,
-            incident
-        )
-    )
+        print("Jira Comment Error:", str(jira_comment_error))
 
     conn.commit()
     conn.close()

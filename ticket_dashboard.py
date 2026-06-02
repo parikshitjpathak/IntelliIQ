@@ -80,7 +80,7 @@ def get_all_tickets():
     cursor = conn.cursor()
 
     cursor.execute("""
-        SELECT Incident, Category, Jira_Ticket_Id, Date, Time,
+        SELECT KB_ID, Incident, Category, Jira_Ticket_Id, Date, Time,
                problem_ticket_id, due_date, normalized_incident,status,resolved_date,
                confluence_link
         FROM knowledgeBase
@@ -96,7 +96,7 @@ def get_all_tickets():
 
     for r in rows:
 
-        incident, category, ticket_id, date_str, time_str, problem_ticket_id, db_due_date, normalized_incident, status,resolved_date, confluence_link = r
+        kb_id,incident, category, ticket_id, date_str, time_str, problem_ticket_id, db_due_date, normalized_incident, status,resolved_date, confluence_link = r
 
         # CATEGORY
         final_category = category
@@ -238,6 +238,8 @@ def get_all_tickets():
 
 
         tickets.append({
+            
+            "kb_id": kb_id,
             "incident": incident,
             "category": final_category,
             "ticket_id": ticket_id,

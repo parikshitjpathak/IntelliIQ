@@ -190,7 +190,7 @@ tr:hover {
 ===================================================== */
 button {
     padding: 6px 12px;
-    background-color: #dc2626;
+    background-color: #3e11ef;
     color: white;
     border: none;
     border-radius: 6px;
@@ -199,7 +199,23 @@ button {
 }
 
 button:hover {
-    background-color: #b91c1c;
+    background-color: #635eef;
+}
+/* =====================================================
+   BUTTONS (NEW)
+===================================================== */
+tbutton {
+    padding: 6px 12px;
+    background-color: #3943ef;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+tbutton:hover {
+    background-color: #4a56f5;
 }
 
 /* =====================================================

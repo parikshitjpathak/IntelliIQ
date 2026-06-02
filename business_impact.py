@@ -675,6 +675,33 @@ def register_business_impact_routes(app):
         highest_category = (
             get_highest_impact_category()
         )
+        # ==========================================================
+        # BUSINESS WINS
+        # ==========================================================
+
+        business_wins = [
+
+            f"${kpis['potential_revenue_saved']:,.0f} preserved through SLA compliance",
+
+            f"{kpis['sla_success_percentage']}% incidents resolved within SLA",
+
+            f"{kpis['revenue_incident_count']} revenue impacting incidents analysed"
+
+]
+
+        # ==========================================================
+        # EXECUTIVE INSIGHTS
+        # ==========================================================
+
+        executive_insights = [
+
+            f"Highest exposure category: {highest_category['category']}",
+
+            f"Potential exposure: ${kpis['potential_revenue_impact']:,.0f}",
+
+            f"Business preservation ratio: {business_value_preservation}%"
+
+]
         impact_type_chart = get_impact_type_chart_data()
         category_chart = get_category_chart_data()
         top_incidents_chart = (get_top_incidents_chart_data())
@@ -713,6 +740,12 @@ def register_business_impact_routes(app):
 
             policies_per_hour=
                 POLICIES_PER_HOUR,
+
+            business_wins=
+                business_wins,
+
+            executive_insights=
+                executive_insights,
 
             average_premium=
                 AVERAGE_PREMIUM,

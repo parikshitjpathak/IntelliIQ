@@ -223,8 +223,9 @@
                         <form method="POST" action="/create_ticket_from_dashboard">
 
                             <input type="hidden" name="incident" value="{{ t.incident }}">
+                            <input type="hidden" name="kb_id" value="{{ t.kb_id }}">
 
-                            <button
+                            <button 
                                 type="submit"
                                 style="padding:6px 12px; border-radius:6px;"
                             >
@@ -235,14 +236,15 @@
 
                     {% endif %}
 
-                    {% if t.confluence_missing %}
+                    {% if t.confluence_missing and t.ticket_id %}
 
                         <form method="POST" action="/create_confluence_from_dashboard">
 
                             <input type="hidden" name="incident" value="{{ t.incident }}">
+                            <input type="hidden" name="kb_id" value="{{ t.kb_id }}">
 
                             <button
-                                type="submit"
+                                type="submit" onclick="alert('confluence clicked')"
                                 style="padding:6px 12px; border-radius:6px;"
                             >
                                 Create Confluence

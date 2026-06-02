@@ -44,7 +44,7 @@
 
         <div class="col-md-3">
 
-            <div class="card shadow-sm border-start border-danger border-4">
+            <div class="card shadow-sm border-start border-danger border-2">
 
                 <div class="card-body text-center">
 
@@ -52,7 +52,7 @@
                         Revenue Impacting Incidents
                     </h6>
 
-                    <h2 class="text-danger">
+                    <h1 class="text-danger fw-bold">
                         {{ revenue_incident_count }}
                     </h2>
 
@@ -68,15 +68,15 @@
 
         <div class="col-md-3">
 
-            <div class="card shadow-sm border-start border-warning border-4">
+            <div class="card shadow-sm border-start border-warning border-2">
 
                 <div class="card-body text-center">
 
                     <h6 class="text-muted">
-                        📉 Potential Revenue Impact
+                        💰 Potential Revenue Impact
                     </h6>
 
-                    <h2 class="text-warning">
+                    <h1 class="text-warning fw-bold">
 
                         ${{ "{:,.0f}".format(potential_revenue_impact) }}
 
@@ -94,15 +94,15 @@
 
         <div class="col-md-3">
 
-            <div class="card shadow-sm border-start border-success border-4">
+            <div class="card shadow-sm border-start border-success border-2">
 
                 <div class="card-body text-center">
 
                     <h6 class="text-muted">
-                        📈 Potential Revenue Saved
+                        🛡️ Potential Revenue Saved
                     </h6>
 
-                    <h2 class="text-success">
+                    <h1 class="text-success fw-bold">
 
                         ${{ "{:,.0f}".format(potential_revenue_saved) }}
 
@@ -120,7 +120,7 @@
 
         <div class="col-md-3">
 
-            <div class="card shadow-sm border-start border-primary border-4">
+            <div class="card shadow-sm border-start border-primary border-2">
 
                 <div class="card-body text-center">
 
@@ -128,7 +128,7 @@
                         SLA Success
                     </h6>
 
-                    <h2 class="text-primary">
+                  <h1 class="text-primary fw-bold">
 
                         {{ sla_success_percentage }}%
 
@@ -150,7 +150,7 @@
     <!-- BUSINESS VALUE SUMMARY -->
     <!-- ========================================================== -->
 
-    <div class="card mb-4">
+   <div class="card mb-4">
 
         <div class="card-body">
 
@@ -158,17 +158,17 @@
 
                 <div class="col-md-3">
 
-                    <strong>Business Value Delivered</strong>
+                    
+                    <strong>Business Value Preservation</strong>
 
                     <h3 class="text-success">
-                        {{ business_value_percentage }}%
+                        ${{ "{:,.0f}".format(potential_revenue_saved) }}
                     </h3>
 
-                </div>
-
-                <div class="col-md-9">
-
-                    <p class="mb-0">
+                    <small class="text-muted">
+                        {{ business_value_percentage }}% preservation ratio
+                    </small>
+                   <p class="mb-0"><br>
 
                         IntelliIQ helped preserve
                         <strong>${{ "{:,.0f}".format(potential_revenue_saved) }}</strong>
@@ -178,11 +178,73 @@
 
                 </div>
 
+                <div class="col-md-9">
+
+                    
+                     <small class="text-muted">
+
+                        Revenue preservation is estimated using
+                        incident duration, SLA targets, average
+                        policy premium and expected policy
+                        processing volume.
+
+                    </small>
+                    <small class="text-muted"><br><br>
+
+                        Preservation % =
+                        (Potential Revenue Saved ÷ Potential Revenue Impact) × 100
+
+                    </small>
+
+                </div>
+
             </div>
 
         </div>
 
     </div>
+    <!-- New card added below-->
+    <div class="card mb-4">
+
+    <div class="card-header">
+
+        How Revenue Impact Is Determined
+
+    </div>
+
+    <div class="card-body">
+
+        <div class="row">
+
+            <div class="col-md-6">
+
+                <strong>Direct Revenue Categories</strong>
+
+                <ul class="mt-2">
+                    <li>Payment Issue</li>
+                    <li>Policy Issue</li>
+                    <li>Login Issue</li>
+                </ul>
+
+            </div>
+
+            <div class="col-md-6">
+
+                <strong>Indirect Revenue Categories</strong>
+
+                <ul class="mt-2">
+                    <li>Database Issue</li>
+                    <li>Infrastructure</li>
+                    <li>Compliance</li>
+                </ul>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
 
     <!-- ========================================================== -->
     <!-- CHART ROW 1 -->
