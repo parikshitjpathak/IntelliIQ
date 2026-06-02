@@ -20,6 +20,8 @@ import os
 import sqlite3
 #from incident_analyser import incident_bp
 from log_analyzer_routes import register_log_analyzer_routes
+from business_impact import register_business_impact_routes
+
 
 from ticket_dashboard import register_ticket_dashboard, get_all_tickets
 from insurance_copilot import register_insurance_copilot
@@ -770,6 +772,7 @@ register_project_health(app)
 register_ticket_dashboard(app)
 register_critical_metrics(app)
 register_system_advisor(app)
+register_business_impact_routes(app)
 
 register_help_page(app)
 register_process_doc(app, llm)
@@ -894,44 +897,7 @@ def operations_dashboard():
 # =================== operations DB route ends here===============
 
 
-# ============ control tower route created below=============
-@app.route("/control_tower")
-def control_tower():
-    # Core widgets
-    status_counts = get_status_distribution()
-    priority_counts = get_priority_distribution()
-    sla_counts = get_sla_status_distribution()
 
-    # Intelligence layer
-    top_analysts = get_top_analysts()
-    top_risks = get_top_risks()
-    aging_tickets = get_aging_tickets()
-    sla_health = get_sla_health(sla_counts)
-
-    # Weekly performance (new clean trends)
-    weekly_metrics = get_weekly_metrics()
-    weekly_trend = get_weekly_trend(weekly_metrics)
-
-    # Metadata
-    last_synced = get_last_synced_time()
-
-    return render_template(
-        "control_tower.html",
-        status_counts=status_counts,
-        priority_counts=priority_counts,
-        sla_counts=sla_counts,
-        top_analysts=top_analysts,
-        top_risks=top_risks,
-        aging_tickets=aging_tickets,
-        weekly_metrics=weekly_metrics,
-        weekly_trend=weekly_trend,
-        last_synced=last_synced,
-        sla_health=sla_health,
-        active_page="control",
-    )
-
-
-# ============== route ends here ===============================
 
 
 # ==========================================================
