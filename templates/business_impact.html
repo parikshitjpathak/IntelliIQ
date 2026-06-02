@@ -1,0 +1,814 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container-fluid mt-3">
+
+    <!-- ========================================================== -->
+    <!-- BUSINESS IMPACT HEADER -->
+    <!-- ========================================================== -->
+
+    <div class="row mb-3">
+
+        <div class="col-md-8">
+            <h3>💰 Business Impact Intelligence</h3>
+            <small class="text-muted">
+                Revenue Exposure • Revenue Preservation • Executive Insights
+            </small>
+        </div>
+
+        <div class="col-md-4 text-end">
+
+            <form method="GET">
+
+                <select name="days" onchange="this.form.submit()" class="form-select">
+
+                    <option value="30">Last 30 Days</option>
+                    <option value="60">Last 60 Days</option>
+                    <option value="90">Last 90 Days</option>
+                    <option value="365">Last 12 Months</option>
+
+                </select>
+
+            </form>
+
+        </div>
+
+    </div>
+
+    <!-- ========================================================== -->
+    <!-- EXECUTIVE KPI CARDS -->
+    <!-- ========================================================== -->
+
+    <div class="row mb-4">
+
+        <div class="col-md-3">
+
+            <div class="card shadow-sm border-start border-danger border-4">
+
+                <div class="card-body text-center">
+
+                    <h6 class="text-muted">
+                        Revenue Impacting Incidents
+                    </h6>
+
+                    <h2 class="text-danger">
+                        {{ revenue_incident_count }}
+                    </h2>
+
+                    <small>
+                        Total identified incidents
+                    </small>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="col-md-3">
+
+            <div class="card shadow-sm border-start border-warning border-4">
+
+                <div class="card-body text-center">
+
+                    <h6 class="text-muted">
+                        📉 Potential Revenue Impact
+                    </h6>
+
+                    <h2 class="text-warning">
+
+                        ${{ "{:,.0f}".format(potential_revenue_impact) }}
+
+                    </h2>
+
+                    <small>
+                        Estimated business exposure
+                    </small>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="col-md-3">
+
+            <div class="card shadow-sm border-start border-success border-4">
+
+                <div class="card-body text-center">
+
+                    <h6 class="text-muted">
+                        📈 Potential Revenue Saved
+                    </h6>
+
+                    <h2 class="text-success">
+
+                        ${{ "{:,.0f}".format(potential_revenue_saved) }}
+
+                    </h2>
+
+                    <small>
+                        Quick resolution benefit
+                    </small>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="col-md-3">
+
+            <div class="card shadow-sm border-start border-primary border-4">
+
+                <div class="card-body text-center">
+
+                    <h6 class="text-muted">
+                        SLA Success
+                    </h6>
+
+                    <h2 class="text-primary">
+
+                        {{ sla_success_percentage }}%
+
+                    </h2>
+
+                    <small>
+                        Resolved within SLA
+                    </small>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- ========================================================== -->
+    <!-- BUSINESS VALUE SUMMARY -->
+    <!-- ========================================================== -->
+
+    <div class="card mb-4">
+
+        <div class="card-body">
+
+            <div class="row">
+
+                <div class="col-md-3">
+
+                    <strong>Business Value Delivered</strong>
+
+                    <h3 class="text-success">
+                        {{ business_value_percentage }}%
+                    </h3>
+
+                </div>
+
+                <div class="col-md-9">
+
+                    <p class="mb-0">
+
+                        IntelliIQ helped preserve
+                        <strong>${{ "{:,.0f}".format(potential_revenue_saved) }}</strong>
+                        through faster incident resolution and SLA adherence.
+
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- ========================================================== -->
+    <!-- CHART ROW 1 -->
+    <!-- ========================================================== -->
+
+    <div class="row mb-4">
+
+        <div class="col-md-4">
+
+            <div class="card">
+
+                <div class="card-header">
+
+                    Revenue Impact Types
+
+                </div>
+
+                <div class="card-body">
+
+                    <canvas id="impactTypeChart"></canvas>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="col-md-4">
+
+            <div class="card">
+
+                <div class="card-header">
+
+                    Revenue Impact Categories
+
+                </div>
+
+                <div class="card-body">
+
+                    <canvas id="impactCategoryChart"></canvas>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="col-md-4">
+
+            <div class="card">
+
+                <div class="card-header">
+
+                    Revenue Exposure by Category
+
+                </div>
+
+                <div class="card-body">
+
+                    <canvas id="revenueExposureChart"></canvas>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- ========================================================== -->
+    <!-- CHART ROW 2 -->
+    <!-- ========================================================== -->
+
+    <div class="row mb-4">
+
+        <div class="col-md-6">
+
+            <div class="card">
+
+                <div class="card-header">
+
+                    Revenue Impact Trend
+
+                </div>
+
+                <div class="card-body">
+
+                    <canvas id="impactTrendChart"></canvas>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="col-md-6">
+
+            <div class="card">
+
+                <div class="card-header">
+
+                    Revenue Saved Trend
+
+                </div>
+
+                <div class="card-body">
+
+                    <canvas id="savedTrendChart"></canvas>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- ========================================================== -->
+    <!-- CATEGORY BREAKDOWN -->
+    <!-- ========================================================== -->
+
+    <div class="card mb-4">
+
+        <div class="card-header">
+
+            Revenue Exposure By Category
+
+        </div>
+
+        <div class="card-body">
+
+            <table class="table table-sm table-striped">
+
+                <thead>
+
+                    <tr>
+
+                        <th>Category</th>
+                        <th>Incidents</th>
+                        <th>Revenue Impact</th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    {% for row in category_summary %}
+
+                    <tr>
+
+                        <td>{{ row.category }}</td>
+
+                        <td>{{ row.count }}</td>
+
+                        <td>
+
+                            ${{ "{:,.0f}".format(row.revenue_impact) }}
+
+                        </td>
+
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+    <!-- ========================================================== -->
+    <!-- TOP INCIDENTS -->
+    <!-- ========================================================== -->
+
+    <div class="card mb-4">
+
+        <div class="card-header">
+
+            Top Revenue Impacting Incidents
+
+        </div>
+
+        <div class="card-body">
+
+            <table class="table table-bordered table-hover">
+
+                <thead>
+
+                    <tr>
+
+                        <th>Ticket</th>
+                        <th>Incident</th>
+                        <th>Category</th>
+                        <th>Impact Type</th>
+                        <th>Duration</th>
+                        <th>Potential Impact</th>
+                        <th>Potential Saved</th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    {% for row in top_incidents %}
+
+                    <tr>
+
+                        <td>{{ row.ticket }}</td>
+                        <td>{{ row.incident }}</td>
+                        <td>{{ row.category }}</td>
+                        <td>{{ row.impact_type }}</td>
+                        <td>{{ row.duration }}</td>
+
+                        <td class="text-danger">
+
+                            ${{ "{:,.0f}".format(row.impact) }}
+
+                        </td>
+
+                        <td class="text-success">
+
+                            ${{ "{:,.0f}".format(row.saved) }}
+
+                        </td>
+
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+    <!-- ========================================================== -->
+    <!-- EXECUTIVE INSIGHTS -->
+    <!-- ========================================================== -->
+
+    <div class="row mb-4">
+
+        <div class="col-md-6">
+
+            <div class="card">
+
+                <div class="card-header bg-success text-white">
+
+                    Key Business Wins
+
+                </div>
+
+                <div class="card-body">
+
+                    <ul>
+
+                        {% for insight in business_wins %}
+
+                        <li>{{ insight }}</li>
+
+                        {% endfor %}
+
+                    </ul>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="col-md-6">
+
+            <div class="card">
+
+                <div class="card-header bg-primary text-white">
+
+                    Executive Insights
+
+                </div>
+
+                <div class="card-body">
+
+                    <ul>
+
+                        {% for insight in executive_insights %}
+
+                        <li>{{ insight }}</li>
+
+                        {% endfor %}
+
+                    </ul>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- ========================================================== -->
+    <!-- CALCULATION METHODOLOGY -->
+    <!-- ========================================================== -->
+
+    <div class="accordion mb-5" id="methodologyAccordion">
+
+        <div class="accordion-item">
+
+            <h2 class="accordion-header">
+
+                <button
+                    class="accordion-button collapsed"
+                    type="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#methodologySection">
+
+                    View Calculation Methodology
+
+                </button>
+
+            </h2>
+
+            <div
+                id="methodologySection"
+                class="accordion-collapse collapse">
+
+                <div class="accordion-body">
+
+                    <p>
+                        Policies Per Hour:
+                        <strong>{{ policies_per_hour }}</strong>
+                    </p>
+
+                    <p>
+                        Average Premium:
+                        <strong>${{ average_premium }}</strong>
+                    </p>
+
+                    <p>
+                        Revenue Per Hour:
+                        <strong>${{ revenue_per_hour }}</strong>
+                    </p>
+
+                    <p>
+                        SLA Hours:
+                        <strong>{{ sla_hours }}</strong>
+                    </p>
+
+                    <hr>
+
+                    <p>
+
+                        Potential Revenue Impact =
+                        Duration × Revenue Per Hour
+
+                    </p>
+
+                    <p>
+
+                        Potential Revenue Saved =
+                        (SLA Hours − Duration)
+                        × Revenue Per Hour
+
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+<!--<div class="card mt-3">
+
+    <div class="card-header">
+
+        Impact Type Chart Debug
+
+    </div>
+
+    <div class="card-body">
+
+        <pre>{{ impact_type_chart }}</pre>
+
+    </div>
+
+</div>-->
+<script>
+
+const impactTypeCtx = document.getElementById(
+    'impactTypeChart'
+);
+//
+// Revenue Impact Categories
+//
+
+new Chart(document.getElementById("impactCategoryChart"), {
+    type: "bar",
+    data: {
+        labels: {{ category_chart["labels"] | tojson }},
+        datasets: [{
+            label: "Revenue Impact",
+            data: {{ category_chart["values"] | tojson }}
+        }]
+    },
+    options: {
+        indexAxis: "y",
+        responsive: true,
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            x: {
+                ticks: {
+                    callback: function(value) {
+                        return '$' + (value / 1000000).toFixed(1) + 'M';
+                    }
+                }
+            }
+        }
+    }
+});
+
+    
+new Chart(
+
+    document.getElementById(
+        "revenueExposureChart"
+    ),
+
+    {
+
+        type: "pie",
+
+        data: {
+
+            labels:
+                {{ category_chart["labels"] | tojson }},
+
+            datasets: [
+
+                {
+
+                    data:
+                        {{ category_chart["values"] | tojson }}
+
+                }
+
+            ]
+
+        },
+
+        options: {
+
+            responsive: true,
+
+            plugins: {
+
+                legend: {
+
+                    position: "bottom"
+
+                }
+
+            }
+
+        }
+
+    }
+
+);
+new Chart(
+
+    document.getElementById(
+        "impactTrendChart"
+    ),
+
+    {
+
+        type: "bar",
+
+        data: {
+
+            labels:
+                {{ top_incidents_chart["labels"] | tojson }},
+
+            datasets: [
+
+                {
+
+                    label:
+                        "Revenue Impact",
+
+                    data:
+                        {{ top_incidents_chart["values"] | tojson }}
+
+                }
+
+            ]
+
+        },
+
+        options: {
+
+            responsive: true,
+
+            plugins: {
+
+                legend: {
+
+                    display: false
+
+                }
+
+            }
+
+        }
+
+    }
+
+);
+new Chart(
+
+    document.getElementById(
+        "savedTrendChart"
+    ),
+
+    {
+
+        type: "bar",
+
+        data: {
+
+            labels:
+                {{ saved_category_chart["labels"] | tojson }},
+
+            datasets: [
+
+                {
+
+                    label:
+                        "Revenue Saved",
+
+                    data:
+                        {{ saved_category_chart["values"] | tojson }}
+
+                }
+
+            ]
+
+        },
+
+        options: {
+
+            indexAxis: "y",
+
+            responsive: true,
+
+            plugins: {
+
+                legend: {
+
+                    display: false
+
+                }
+
+            }
+
+        }
+
+    }
+
+);
+new Chart(
+
+    impactTypeCtx,
+
+    {
+
+        type: 'doughnut',
+
+        data: {
+
+            labels: {{ impact_type_chart["labels"] | tojson }},
+
+            datasets: [
+
+                {
+
+                    data: {{ impact_type_chart["values"] | tojson }}
+
+                }
+
+            ]
+
+        },
+
+        options: {
+
+            responsive: true,
+
+            plugins: {
+
+                legend: {
+
+                    position: 'bottom'
+
+                }
+
+            }
+
+        }
+
+    }
+
+);
+
+</script>
+{% endblock %}
+<!-- This is the end of the file-->
