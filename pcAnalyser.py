@@ -52,7 +52,7 @@ from datetime import datetime
 from analyst_detail import register_analyst_detail
 from rca_engine import register_rca_routes
 from historical_rca_engine import search_historical_rca
-from db_debug import db_debug_bp
+#from db_debug import db_debug_bp
 
 # ============= for telegram config======================
 
@@ -781,7 +781,7 @@ register_analyst_intelligence(app, llm)
 register_analyst_detail(app, llm)
 register_rca_routes(app, llm, DB_NAME)
 register_log_analyzer_routes(app,llm,DB_NAME)
-app.register_blueprint(db_debug_bp)
+#app.register_blueprint(db_debug_bp)
 #app.register_blueprint(incident_bp)
 
 # ====== Add all apps registered between these blocks
