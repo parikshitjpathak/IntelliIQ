@@ -32,12 +32,13 @@ def db_debug():
            SELECT
             KB_ID,
             Incident,
+            Jira_Ticket_Id,
+            confluence_link,
             Date,
-            Time,
-            Jira_Ticket_Id
+            Time
         FROM knowledgeBase
         ORDER BY KB_ID DESC
-        LIMIT 20;
+        LIMIT 100;
         """)
 
         
