@@ -29,16 +29,13 @@ def db_debug():
 
         # Fetch all rows
         cursor.execute("""
-            SELECT
+           SELECT
             KB_ID,
             Incident,
             Jira_Ticket_Id,
-            confluence_link,
-            due_date,
-            status
+            confluence_link
         FROM knowledgeBase
-        WHERE lower(Incident) LIKE '%ajax%'
-        ORDER BY KB_ID DESC
+        WHERE Jira_Ticket_Id = 'TES-178';
         """)
 
         
