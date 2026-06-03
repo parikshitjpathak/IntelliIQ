@@ -41,10 +41,19 @@ def db_debug():
         ORDER BY KB_ID DESC
         """)
 
+        
+    
+
         rows = cursor.fetchall()
 
         conn.close()
-        return str(dict(rows[0]))
+
+        output = ""
+
+        for row in rows:
+            output += str(dict(row)) + "<br><br>"
+
+        return output
 
         html = f"""
         <html>
