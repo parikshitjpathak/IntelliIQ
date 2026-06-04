@@ -43,16 +43,11 @@ def db_debug():
 
         # Fetch all rows
         cursor.execute("""
-           SELECT
-            KB_ID,
-            Incident,
-            Jira_Ticket_Id,
-            confluence_link,
-            Date,
-            Time
+          SELECT *
         FROM knowledgeBase
+        WHERE KB_ID IN (52,62)
         ORDER BY KB_ID DESC
-        LIMIT 100;
+        ;
         """)
 
         
