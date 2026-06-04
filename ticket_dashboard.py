@@ -85,7 +85,7 @@ def get_all_tickets():
                confluence_link
         FROM knowledgeBase
         WHERE 1=1           
-        ORDER BY Date DESC
+        ORDER BY KB_ID DESC
     """)
 
     rows = cursor.fetchall()
