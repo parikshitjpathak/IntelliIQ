@@ -1,6 +1,7 @@
 import os
 import sqlite3
 from flask import Blueprint
+from datetime import datetime
 
 db_debug_bp = Blueprint("db_debug", __name__)
 
@@ -9,7 +10,7 @@ DB_NAME = os.path.join(BASE_DIR, "IntelliIQ.db")
 
 
 
-from datetime import datetime
+print("parikshit is brilliant")
 
 db_stats = os.stat(DB_NAME)
 
@@ -23,6 +24,11 @@ def db_debug():
 
         db_exists = os.path.exists(DB_NAME)
         current_dir = os.getcwd()
+        db_stats = os.stat(DB_NAME)
+
+        db_modified = datetime.fromtimestamp(
+            db_stats.st_mtime
+        )
 
         conn = sqlite3.connect(DB_NAME)
         conn.row_factory = sqlite3.Row
@@ -56,7 +62,13 @@ def db_debug():
 
         conn.close()
 
-        output = ""
+        output = f"""
+        DB Path: {DB_NAME}<br>
+        DB Exists: {db_exists}<br>
+        Current Directory: {current_dir}<br>
+        DB Last Modified: {db_modified}<br>
+        Total Rows: {total_rows}<br><br>
+        """
 
         for row in rows:
             output += str(dict(row)) + "<br><br>"
@@ -96,6 +108,10 @@ def db_debug():
         <body>
 
         <h2>IntelliIQ Database Debug</h2>
+        <p><b>DB Path:</b> {DB_NAME}</p>
+        <p><b>DB Exists:</b> {db_exists}</p>
+        <p><b>Current Working Directory:</b> {current_dir}</p>
+        <p><b>DB Last Modified:</b> {db_modified}</p>
 
         <p><b>DB Path:</b> {DB_NAME}</p>
         <p><b>DB Exists:</b> {db_exists}</p>
@@ -139,6 +155,7 @@ def db_debug():
         """
 
         return html
+    
 
     except Exception as e:
 
