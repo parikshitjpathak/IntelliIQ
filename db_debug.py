@@ -8,6 +8,14 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_NAME = os.path.join(BASE_DIR, "IntelliIQ.db")
 
 
+
+from datetime import datetime
+
+db_stats = os.stat(DB_NAME)
+
+print("DB PATH:", DB_NAME)
+print("DB MODIFIED:", datetime.fromtimestamp(db_stats.st_mtime))
+
 @db_debug_bp.route("/db_debug")
 def db_debug():
 
