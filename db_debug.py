@@ -43,9 +43,16 @@ def db_debug():
 
         # Fetch all rows
         cursor.execute("""
-          SELECT *
+         SELECT
+            KB_ID,
+            Incident,
+            Jira_Ticket_Id,
+            confluence_link,
+            Date,
+            Time
         FROM knowledgeBase
-        WHERE KB_ID IN (52,62)
+        WHERE lower(Incident) LIKE '%claims%'
+        OR lower(Incident) LIKE '%ajax%'
         ORDER BY KB_ID DESC
         ;
         """)
