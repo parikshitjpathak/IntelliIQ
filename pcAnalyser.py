@@ -849,7 +849,7 @@ def operations_dashboard():
         print("===== PROBLEM TICKETS =====")
 
 
-        tickets = get_all_tickets()
+    tickets = get_all_tickets()
 
     #============operations dashboard route ends=========================
 
