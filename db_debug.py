@@ -40,14 +40,14 @@ def db_debug():
 
         cursor.execute("""
         UPDATE knowledgeBase
-        SET Jira_Ticket_Id = 'TEST-999'
+        SET Jira_Ticket_Id = NULL
         WHERE KB_ID = 52
         """)
 
         conn.commit()
         conn.close()
 
-        return "KB_ID 52 Updated"
+        return "KB_ID 52 Reset"
 
         output = f"""
         DB Path: {DB_NAME}<br>
