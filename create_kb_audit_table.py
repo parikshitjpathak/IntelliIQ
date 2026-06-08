@@ -17,7 +17,13 @@ def create_audit_table():
 
     try:
 
-        conn = sqlite3.connect(DB_NAME)
+        db_exists = os.path.exists(DB_NAME)
+
+        conn = sqlite3.connect(
+            DB_NAME,
+            timeout=30
+        )
+
         cursor = conn.cursor()
 
         cursor.execute("""
@@ -49,10 +55,48 @@ def create_audit_table():
         """)
 
         conn.commit()
+
+        cursor.execute("""
+
+            SELECT name
+
+            FROM sqlite_master
+
+            WHERE type='table'
+
+            AND name='kb_audit_log'
+
+        """)
+
+        table_check = cursor.fetchone()
+
         conn.close()
 
-        return "SUCCESS : kb_audit_log table created"
+        return f"""
+
+        SUCCESS<br><br>
+
+        BASE_DIR = {BASE_DIR}<br>
+        DB_NAME = {DB_NAME}<br>
+        DB_EXISTS = {db_exists}<br>
+
+        <hr>
+
+        TABLE_CHECK = {table_check}
+
+        """
 
     except Exception as e:
 
-        return f"ERROR : {str(e)}"
+        return f"""
+
+        ERROR<br><br>
+
+        BASE_DIR = {BASE_DIR}<br>
+        DB_NAME = {DB_NAME}<br>
+
+        <hr>
+
+        {str(e)}
+
+        """
