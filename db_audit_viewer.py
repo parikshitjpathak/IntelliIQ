@@ -29,6 +29,15 @@ def db_audit():
         cursor = conn.cursor()
 
         cursor.execute("""
+            SELECT COUNT(*)
+            FROM sqlite_master
+        """)
+
+        master_count = cursor.fetchone()[0]
+
+        file_size = os.path.getsize(DB_NAME)
+
+        cursor.execute("""
             SELECT *
             FROM kb_audit_log
             ORDER BY audit_id DESC
@@ -41,11 +50,13 @@ def db_audit():
 
         output = f"""
 
-        <h2>KB Audit Log</h2>
+        <h2>KB Audit Viewer</h2>
 
         <b>BASE_DIR:</b> {BASE_DIR}<br>
         <b>DB_NAME:</b> {DB_NAME}<br>
         <b>DB_EXISTS:</b> {db_exists}<br>
+        <b>FILE_SIZE:</b> {file_size}<br>
+        <b>MASTER_COUNT:</b> {master_count}<br>
 
         <hr>
 

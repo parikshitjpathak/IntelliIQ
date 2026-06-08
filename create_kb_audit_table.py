@@ -57,32 +57,38 @@ def create_audit_table():
         conn.commit()
 
         cursor.execute("""
-
             SELECT name
-
             FROM sqlite_master
-
             WHERE type='table'
-
             AND name='kb_audit_log'
-
         """)
 
         table_check = cursor.fetchone()
+
+        cursor.execute("""
+            SELECT COUNT(*)
+            FROM sqlite_master
+        """)
+
+        master_count = cursor.fetchone()[0]
+
+        file_size = os.path.getsize(DB_NAME)
 
         conn.close()
 
         return f"""
 
-        SUCCESS<br><br>
+        <h2>Create Audit Table</h2>
 
-        BASE_DIR = {BASE_DIR}<br>
-        DB_NAME = {DB_NAME}<br>
-        DB_EXISTS = {db_exists}<br>
+        <b>BASE_DIR:</b> {BASE_DIR}<br>
+        <b>DB_NAME:</b> {DB_NAME}<br>
+        <b>DB_EXISTS:</b> {db_exists}<br>
+        <b>FILE_SIZE:</b> {file_size}<br>
+        <b>MASTER_COUNT:</b> {master_count}<br>
 
         <hr>
 
-        TABLE_CHECK = {table_check}
+        <b>TABLE_CHECK:</b> {table_check}
 
         """
 
@@ -90,13 +96,13 @@ def create_audit_table():
 
         return f"""
 
-        ERROR<br><br>
+        <h2>Create Audit Table Error</h2>
 
-        BASE_DIR = {BASE_DIR}<br>
-        DB_NAME = {DB_NAME}<br>
+        <b>BASE_DIR:</b> {BASE_DIR}<br>
+        <b>DB_NAME:</b> {DB_NAME}<br>
 
         <hr>
 
-        {str(e)}
+        <pre>{str(e)}</pre>
 
         """
