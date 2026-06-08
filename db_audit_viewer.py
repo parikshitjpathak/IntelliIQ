@@ -1,5 +1,6 @@
 import os
 import sqlite3
+
 from flask import Blueprint
 
 db_audit_bp = Blueprint(
@@ -16,7 +17,13 @@ def db_audit():
 
     try:
 
-        conn = sqlite3.connect(DB_NAME)
+        db_exists = os.path.exists(DB_NAME)
+
+        conn = sqlite3.connect(
+            DB_NAME,
+            timeout=30
+        )
+
         conn.row_factory = sqlite3.Row
 
         cursor = conn.cursor()
@@ -32,18 +39,42 @@ def db_audit():
 
         conn.close()
 
-        output = "<h2>KB Audit Log</h2><hr>"
+        output = f"""
 
-        for row in rows:
+        <h2>KB Audit Log</h2>
 
-            output += str(dict(row))
-            output += "<br><br>"
+        <b>BASE_DIR:</b> {BASE_DIR}<br>
+        <b>DB_NAME:</b> {DB_NAME}<br>
+        <b>DB_EXISTS:</b> {db_exists}<br>
+
+        <hr>
+
+        """
+
+        if not rows:
+
+            output += "<b>No Audit Records Found</b><br>"
+
+        else:
+
+            for row in rows:
+
+                output += str(dict(row))
+                output += "<br><br>"
 
         return output
 
     except Exception as e:
 
         return f"""
+
         <h2>Audit Viewer Error</h2>
+
+        <b>BASE_DIR:</b> {BASE_DIR}<br>
+        <b>DB_NAME:</b> {DB_NAME}<br>
+
+        <hr>
+
         <pre>{str(e)}</pre>
+
         """
