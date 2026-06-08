@@ -62,59 +62,7 @@ import requests
 import os
 
 
-#============= for audit logs===================================
-def log_kb_audit(
-    route_name,
-    kb_id,
-    incident,
-    old_ticket,
-    new_ticket,
-    old_confluence,
-    new_confluence,
-    remarks
-):
 
-    conn = sqlite3.connect(DB_NAME)
-    cursor = conn.cursor()
-
-    cursor.execute("""
-
-        INSERT INTO kb_audit_log (
-
-            audit_time,
-            route_name,
-            kb_id,
-            incident,
-            old_jira_ticket_id,
-            new_jira_ticket_id,
-            old_confluence_link,
-            new_confluence_link,
-            remarks
-
-        )
-
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-
-    """, (
-
-        datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        route_name,
-        kb_id,
-        incident,
-        old_ticket,
-        new_ticket,
-        old_confluence,
-        new_confluence,
-        remarks
-
-    ))
-
-    conn.commit()
-    conn.close()
-
-
-
-#============= audit logs end here =============================
 
 # ===================== Top Analysts clisuure======================
 
@@ -2170,34 +2118,7 @@ def create_ticket_from_dashboard():
     )
 
     row = cursor.fetchone()
-    #=========== for auditlog ======================
-    cursor.execute("""
-
-    SELECT
-        Jira_Ticket_Id,
-        confluence_link
-
-    FROM knowledgeBase
-
-    WHERE KB_ID = ?
-
-    """, (kb_id,))
-
-    audit_row = cursor.fetchone()
-
-    old_ticket = None
-    old_confluence = None
-
-    if audit_row:
-
-        old_ticket = audit_row[0]
-        old_confluence = audit_row[1]
-
-
-
-
-
-    #========== end of audit log ===================
+    
 
     if not row:
 
@@ -2250,31 +2171,7 @@ Recommendations:
 
     print("Rows Updated:", cursor.rowcount)
 
-    #============== audit log insertions=============
-    log_kb_audit(
-
-    route_name="create_ticket_from_dashboard",
-
-    kb_id=kb_id,
-
-    incident=incident,
-
-    old_ticket=old_ticket,
-
-    new_ticket=ticket_key,
-
-    old_confluence=old_confluence,
-
-    new_confluence=old_confluence,
-
-    remarks="Dashboard Ticket Created"
-
-)
-
-
-
-
-    #============  audit log insertions end =============
+   
 
     conn.commit()
     conn.close()
