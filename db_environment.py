@@ -22,13 +22,23 @@ def db_environment_debug():
 
         db_exists = os.path.exists(DB_NAME)
 
-        db_stats = os.stat(DB_NAME)
+        current_dir = os.getcwd()
 
-        db_modified = datetime.fromtimestamp(
-            db_stats.st_mtime
+        db_modified = "N/A"
+
+        if db_exists:
+
+            db_stats = os.stat(DB_NAME)
+
+            db_modified = datetime.fromtimestamp(
+                db_stats.st_mtime
+            )
+
+        conn = sqlite3.connect(
+            DB_NAME,
+            timeout=30
         )
 
-        conn = sqlite3.connect(DB_NAME)
         cursor = conn.cursor()
 
         cursor.execute("""
@@ -44,13 +54,17 @@ def db_environment_debug():
 
         <h2>Environment Debug</h2>
 
+        <hr>
+
         <b>Hostname:</b> {socket.gethostname()}<br>
         <b>Python Version:</b> {platform.python_version()}<br>
         <b>Operating System:</b> {platform.platform()}<br>
 
         <hr>
 
-        <b>DB Path:</b> {DB_NAME}<br>
+        <b>BASE_DIR:</b> {BASE_DIR}<br>
+        <b>DB_NAME:</b> {DB_NAME}<br>
+        <b>Current Working Directory:</b> {current_dir}<br>
         <b>DB Exists:</b> {db_exists}<br>
         <b>DB Last Modified:</b> {db_modified}<br>
         <b>Total Rows:</b> {total_rows}<br>
@@ -60,6 +74,14 @@ def db_environment_debug():
     except Exception as e:
 
         return f"""
+
         <h2>Environment Debug Error</h2>
+
+        <b>BASE_DIR:</b> {BASE_DIR}<br>
+        <b>DB_NAME:</b> {DB_NAME}<br>
+
+        <hr>
+
         <pre>{str(e)}</pre>
+
         """
