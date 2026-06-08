@@ -53,6 +53,12 @@ from analyst_detail import register_analyst_detail
 from rca_engine import register_rca_routes
 from historical_rca_engine import search_historical_rca
 from db_debug import db_debug_bp
+from db_update import db_update_test_bp
+from db_environment import db_environment_debug_bp
+from db_audit_viewer import db_audit_bp
+
+from create_kb_audit_table import create_audit_table_bp
+
 
 # ============= for telegram config======================
 
@@ -60,6 +66,59 @@ import requests
 import os
 
 
+#============= for audit logs===================================
+def log_kb_audit(
+    route_name,
+    kb_id,
+    incident,
+    old_ticket,
+    new_ticket,
+    old_confluence,
+    new_confluence,
+    remarks
+):
+
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+
+    cursor.execute("""
+
+        INSERT INTO kb_audit_log (
+
+            audit_time,
+            route_name,
+            kb_id,
+            incident,
+            old_jira_ticket_id,
+            new_jira_ticket_id,
+            old_confluence_link,
+            new_confluence_link,
+            remarks
+
+        )
+
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+
+    """, (
+
+        datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        route_name,
+        kb_id,
+        incident,
+        old_ticket,
+        new_ticket,
+        old_confluence,
+        new_confluence,
+        remarks
+
+    ))
+
+    conn.commit()
+    conn.close()
+
+
+
+#============= audit logs end here =============================
 
 # ===================== Top Analysts clisuure======================
 
@@ -782,7 +841,10 @@ register_analyst_detail(app, llm)
 register_rca_routes(app, llm, DB_NAME)
 register_log_analyzer_routes(app,llm,DB_NAME)
 app.register_blueprint(db_debug_bp)
-#app.register_blueprint(incident_bp)
+app.register_blueprint(db_update_test_bp)
+app.register_blueprint(db_environment_debug_bp)
+app.register_blueprint(db_audit_bp)
+app.register_blueprint(create_audit_table_bp)
 
 # ====== Add all apps registered between these blocks
 
@@ -820,7 +882,33 @@ def operations_dashboard():
 
     early_warnings = get_early_warnings()
     problem_tickets = get_recurring_issues()
-    tickets = get_all_tickets()
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT incident, jira_ticket_id
+        FROM ProblemTickets
+        WHERE jira_ticket_id IS NOT NULL
+    """)
+
+    rows = cursor.fetchall()
+    conn.close()
+
+    existing_map = {
+        r[0].strip().lower(): r[1]
+        for r in rows
+    }
+
+    for p in problem_tickets:
+
+        key = p["incident"].strip().lower()
+
+        p["problem_ticket_id"] = existing_map.get(key)
+
+        print("===== PROBLEM TICKETS =====")
+
+
+        tickets = get_all_tickets()
 
     #============operations dashboard route ends=========================
 
@@ -2089,6 +2177,34 @@ def create_ticket_from_dashboard():
     )
 
     row = cursor.fetchone()
+    #=========== for auditlog ======================
+    cursor.execute("""
+
+    SELECT
+        Jira_Ticket_Id,
+        confluence_link
+
+    FROM knowledgeBase
+
+    WHERE KB_ID = ?
+
+    """, (kb_id,))
+
+    audit_row = cursor.fetchone()
+
+    old_ticket = None
+    old_confluence = None
+
+    if audit_row:
+
+        old_ticket = audit_row[0]
+        old_confluence = audit_row[1]
+
+
+
+
+
+    #========== end of audit log ===================
 
     if not row:
 
@@ -2140,6 +2256,32 @@ Recommendations:
     )
 
     print("Rows Updated:", cursor.rowcount)
+
+    #============== audit log insertions=============
+    log_kb_audit(
+
+    route_name="create_ticket_from_dashboard",
+
+    kb_id=kb_id,
+
+    incident=incident,
+
+    old_ticket=old_ticket,
+
+    new_ticket=ticket_key,
+
+    old_confluence=old_confluence,
+
+    new_confluence=old_confluence,
+
+    remarks="Dashboard Ticket Created"
+
+)
+
+
+
+
+    #============  audit log insertions end =============
 
     conn.commit()
     conn.close()
