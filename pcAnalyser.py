@@ -2256,26 +2256,66 @@ Recommendations:
 
     print("Rows Updated:", cursor.rowcount)
 
-    #============== audit log insertions=============
-    log_kb_audit(
+    #============== audit log insertions============= #
+   # log_kb_audit(
 
-    route_name="create_ticket_from_dashboard",
+   # route_name="create_ticket_from_dashboard",
 
-    kb_id=kb_id,
+   # kb_id=kb_id,
 
-    incident=incident,
+   # incident=incident,
 
-    old_ticket=old_ticket,
+   # old_ticket=old_ticket,
 
-    new_ticket=ticket_key,
+   # new_ticket=ticket_key,
 
-    old_confluence=old_confluence,
+    #old_confluence=old_confluence,
 
-    new_confluence=old_confluence,
+    #new_confluence=old_confluence,
 
-    remarks="Dashboard Ticket Created"
+    #remarks="Dashboard Ticket Created"
 
-)
+#)
+
+    cursor.execute("""
+
+    INSERT INTO kb_audit_log (
+
+        audit_time,
+        route_name,
+        kb_id,
+        incident,
+        old_jira_ticket_id,
+        new_jira_ticket_id,
+        old_confluence_link,
+        new_confluence_link,
+        remarks
+
+    )
+
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+
+    """, (
+
+        datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+
+        "create_ticket_from_dashboard",
+
+        kb_id,
+
+        incident,
+
+        old_ticket,
+
+        ticket_key,
+
+        old_confluence,
+
+        old_confluence,
+
+        "Dashboard Ticket Created"
+
+    ))
 
 
 
