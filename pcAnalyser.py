@@ -57,6 +57,7 @@ from db_update import db_update_test_bp
 from db_environment import db_environment_debug_bp
 from db_audit_viewer import db_audit_bp
 from create_kb_audit_table import create_audit_table_bp
+from db_tables import db_tables_bp
 
 
 # ============= for telegram config======================
@@ -844,6 +845,7 @@ app.register_blueprint(db_update_test_bp)
 app.register_blueprint(db_environment_debug_bp)
 app.register_blueprint(db_audit_bp)
 app.register_blueprint(create_audit_table_bp)
+app.register_blueprint(db_tables_bp)
 
 # ====== Add all apps registered between these blocks
 
