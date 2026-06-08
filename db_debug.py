@@ -1,0 +1,152 @@
+import os
+import sqlite3
+from flask import Blueprint
+from datetime import datetime
+
+db_debug_bp = Blueprint("db_debug", __name__)
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_NAME = os.path.join(BASE_DIR, "IntelliIQ.db")
+
+
+
+print("parikshit is brilliant")
+
+db_stats = os.stat(DB_NAME)
+
+print("DB PATH:", DB_NAME)
+print("DB MODIFIED:", datetime.fromtimestamp(db_stats.st_mtime))
+
+@db_debug_bp.route("/db_debug")
+def db_debug():
+
+    try:
+
+        db_exists = os.path.exists(DB_NAME)
+        current_dir = os.getcwd()
+        db_stats = os.stat(DB_NAME)
+
+        db_modified = datetime.fromtimestamp(
+            db_stats.st_mtime
+        )
+
+        conn = sqlite3.connect(DB_NAME)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+
+        # Total rows
+     
+        cursor = conn.cursor()
+
+        cursor.execute("""
+        UPDATE knowledgeBase
+        SET Jira_Ticket_Id = 'TEST-999'
+        WHERE KB_ID = 52
+        """)
+
+        conn.commit()
+        conn.close()
+
+        return "KB_ID 52 Updated"
+
+        output = f"""
+        DB Path: {DB_NAME}<br>
+        DB Exists: {db_exists}<br>
+        Current Directory: {current_dir}<br>
+        DB Last Modified: {db_modified}<br>
+        Total Rows: {total_rows}<br><br>
+        """
+
+        for row in rows:
+            output += str(dict(row)) + "<br><br>"
+
+        return output
+
+        html = f"""
+        <html>
+        <head>
+            <title>IntelliIQ DB Debug</title>
+            <style>
+                body {{
+                    font-family: Arial, sans-serif;
+                    padding: 20px;
+                }}
+
+                table {{
+                    border-collapse: collapse;
+                    width: 100%;
+                }}
+
+                th, td {{
+                    border: 1px solid #ccc;
+                    padding: 8px;
+                    text-align: left;
+                }}
+
+                th {{
+                    background-color: #f2f2f2;
+                }}
+
+                tr:nth-child(even) {{
+                    background-color: #f9f9f9;
+                }}
+            </style>
+        </head>
+        <body>
+
+        <h2>IntelliIQ Database Debug</h2>
+        <p><b>DB Path:</b> {DB_NAME}</p>
+        <p><b>DB Exists:</b> {db_exists}</p>
+        <p><b>Current Working Directory:</b> {current_dir}</p>
+        <p><b>DB Last Modified:</b> {db_modified}</p>
+
+        <p><b>DB Path:</b> {DB_NAME}</p>
+        <p><b>DB Exists:</b> {db_exists}</p>
+        <p><b>Current Working Directory:</b> {current_dir}</p>
+        <p><b>Total Rows in knowledgeBase:</b> {total_rows}</p>
+
+        <hr>
+
+        <table>
+            <tr>
+                <th>KB_ID</th>
+                <th>Incident</th>
+                <th>Jira Ticket ID</th>
+                <th>Confluence URL</th>
+                <th>Due Date</th>
+                <th>Status</th>
+            </tr>
+        """
+
+        for row in rows:
+            for row in rows:
+                print(dict(row))
+                return str(dict(row))
+
+            html += f"""
+            <tr>
+                <td>{row['KB_ID']}</td>
+                <td>{row['incident']}</td>
+                <td>{row['jira_ticket_id']}</td>
+                <td>{row['confluence_url']}</td>
+                <td>{row['due_date']}</td>
+                <td>{row['status']}</td>
+            </tr>
+            """
+
+        html += """
+        </table>
+
+        </body>
+        </html>
+        """
+
+        return html
+    
+
+    except Exception as e:
+
+        return f"""
+        <h2>DB Debug Error</h2>
+        <pre>{str(e)}</pre>
+        """
